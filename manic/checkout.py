@@ -282,8 +282,10 @@ def main(args):
                 printlog(msg)
             # exit gracefully
             msg = textwrap.fill(
-                'Some external repositories are not in a clean '
-                'state. Please ensure all external repositories are clean '
+                'Some external repositories are not in a clean state. '
+                '(Generally, these are repositories with "M" in the '
+                'second column in the above status output.) '
+                'Please ensure all external repositories are clean '
                 'before updating.')
             printlog('-' * 70)
             printlog(msg)
