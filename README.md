@@ -154,6 +154,8 @@ The root of the source tree will be referred to as `${SRC_ROOT}` below.
 
   * tag (string) : tag to checkout
 
+    This can also be a git SHA-1
+
   * branch (string) : branch to checkout
 
     Note: either tag or branch must be supplied, but not both.
