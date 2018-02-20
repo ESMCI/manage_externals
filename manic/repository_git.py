@@ -37,10 +37,11 @@ class GitRepository(Repository):
 
     """
 
-    # match XYZ of '* (HEAD detached at {XYZ}):
-    # e.g. * (HEAD detached at origin/feature-2)
+    # match XYZ and abc123 of '* (HEAD detached at XYZ) abc123':
+    # e.g. * (HEAD detached at origin/feature-2) abc123
+    # (where 'abc123' here represents the full git hash)
     RE_DETACHED = re.compile(
-        r'\* \((?:[\w]+[\s]+)?detached (?:at|from) ([\w\-./]+)\)')
+        r'\* \((?:[\w]+[\s]+)?detached (?:at|from) ([\w\-./]+)\)[\s]+([\w]+)')
 
     # match tracking reference info, return XYZ from [XYZ]
     # e.g. [origin/master]
@@ -93,22 +94,33 @@ class GitRepository(Repository):
         self._git_clone(self._url, repo_dir_name, verbosity)
         os.chdir(cwd)
 
-    def _current_ref_from_branch_command(self, git_output):
+    def _current_refs_from_branch_command(self, git_output):
         """Parse output of the 'git branch' command to determine the current branch.
-        The line starting with '*' is the current branch. It can be one of:
 
-  feature2 36418b4 [origin/feature2] Work on feature2
-* feature3 36418b4 Work on feature2
-  master   9b75494 [origin/master] Initialize repository.
+        Returns a list of references that identify the current
+        branch. In many cases, this list will have just a single element
+        giving the reference, but if we're in detached head state, the
+        list contains both (1) the tag or abbreviated hash at which
+        we're detached and (2) the full hash (because either is an
+        acceptable "expected" reference). If there is no current
+        reference, returns an empty list.
 
-* (HEAD detached at 36418b4) 36418b4 Work on feature2
-  feature2                   36418b4 [origin/feature2] Work on feature2
-  master                     9b75494 [origin/master] Initialize repository.
+        The line starting with '*' is the current branch. It can be one
+        of the following (where, for brevity, we're assuming a full hash
+        has 13 characters rather than thet actual 40):
 
-* (HEAD detached at origin/feature2) 36418b4 Work on feature2
-  feature2                           36418b4 [origin/feature2] Work on feature2
-  feature3                           36418b4 Work on feature2
-  master                             9b75494 [origin/master] Initialize repository.
+  feature2 36418b4abc123 [origin/feature2] Work on feature2
+* feature3 36418b4abc123 Work on feature2
+  master   9b75494abc123 [origin/master] Initialize repository.
+
+* (HEAD detached at 36418b4) 36418b4abc123 Work on feature2
+  feature2                   36418b4abc123 [origin/feature2] Work on feature2
+  master                     9b75494abc123 [origin/master] Initialize repository.
+
+* (HEAD detached at origin/feature2) 36418b4abc123 Work on feature2
+  feature2                           36418b4abc123 [origin/feature2] Work on feature2
+  feature3                           36418b4abc123 Work on feature2
+  master                             9b75494abc123 [origin/master] Initialize repository.
 
         Possible head states:
 
@@ -138,7 +150,7 @@ class GitRepository(Repository):
             if line.startswith('*'):
                 ref = line
                 break
-        current_ref = EMPTY_STR
+        current_refs = []
         if not ref:
             # not a git repo? some other error? we return so the
             # caller can handle.
@@ -146,7 +158,8 @@ class GitRepository(Repository):
         elif 'detached' in ref:
             match = self.RE_DETACHED.search(ref)
             try:
-                current_ref = match.group(1)
+                current_refs.append(match.group(1))
+                current_refs.append(match.group(2))
             except BaseException:
                 msg = 'DEV_ERROR: regex to detect detached head state failed!'
                 msg += '\nref:\n{0}\ngit_output\n{1}\n'.format(ref, git_output)
@@ -154,16 +167,16 @@ class GitRepository(Repository):
         elif '[' in ref:
             match = self.RE_TRACKING.search(ref)
             try:
-                current_ref = match.group(1)
+                current_refs.append(match.group(1))
             except BaseException:
                 msg = 'DEV_ERROR: regex to detect tracking branch failed.'
                 fatal_error(msg)
         else:
             # assumed local branch
-            current_ref = ref.split()[1]
+            current_refs.append(ref.split()[1])
 
-        current_ref = current_ref.strip()
-        return current_ref
+        current_refs = [one_ref.strip() for one_ref in current_refs]
+        return current_refs
 
     def _check_sync(self, stat, repo_dir_path):
         """Determine whether a git repository is in-sync with the model
@@ -197,11 +210,13 @@ class GitRepository(Repository):
 
 
         """
-        def compare_refs(current_ref, expected_ref):
+        def compare_refs(current_refs, expected_ref):
             """Compare the current and expected ref.
 
+            current_refs is a list of candidate references
+
             """
-            if current_ref == expected_ref:
+            if expected_ref in current_refs:
                 status = ExternalStatus.STATUS_OK
             else:
                 status = ExternalStatus.MODEL_MODIFIED
@@ -211,7 +226,7 @@ class GitRepository(Repository):
         os.chdir(repo_dir_path)
 
         git_output = self._git_branch_vv()
-        current_ref = self._current_ref_from_branch_command(git_output)
+        current_refs = self._current_refs_from_branch_command(git_output)
 
         if self._branch:
             if self._url == LOCAL_PATH_INDICATOR:
@@ -227,11 +242,13 @@ class GitRepository(Repository):
         else:
             expected_ref = self._tag
 
-        stat.sync_state = compare_refs(current_ref, expected_ref)
-        if current_ref == EMPTY_STR:
+        if current_refs:
+            stat.sync_state = compare_refs(current_refs, expected_ref)
+            stat.current_version = current_refs[0]
+        else:
             stat.sync_state = ExternalStatus.UNKNOWN
+            stat.current_version = EMPTY_STR
 
-        stat.current_version = current_ref
         stat.expected_version = expected_ref
 
         os.chdir(cwd)
@@ -550,7 +567,7 @@ class GitRepository(Repository):
         upstream tracking and hash.
 
         """
-        cmd = ['git', 'branch', '--verbose', '--verbose']
+        cmd = ['git', 'branch', '--verbose', '--verbose', '--no-abbrev']
         git_output = execute_subprocess(cmd, output_to_caller=True)
         return git_output
 

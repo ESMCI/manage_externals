@@ -1,3 +1,9 @@
+The master repository for manage_externals is
+https://github.com/NCAR/manage_externals. Any issues with this tool
+should be reported there.
+
+------------------------------------------------------------------------
+
 CESM is comprised of a number of different components that are
 developed and managed independently. Each component may have
 additional 'external' dependancies and optional parts that are also

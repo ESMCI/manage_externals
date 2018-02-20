@@ -23,45 +23,48 @@ from manic.externals_description import ExternalsDescription
 from manic.externals_description import ExternalsDescriptionDict
 from manic.global_constants import EMPTY_STR
 
+# In the following, we're pretending that a full (non-abbreviated) git
+# hash has 13 characters
+
 # pylint: disable=C0103
 GIT_BRANCH_OUTPUT_DETACHED_BRANCH_v1_8 = '''
-* (detached from origin/feature2) 36418b4 Work on feature2
-  master                          9b75494 [origin/master] Initialize repository.
+* (detached from origin/feature2) 36418b4abc123 Work on feature2
+  master                          9b75494abc123 [origin/master] Initialize repository.
 '''
 # pylint: enable=C0103
 
 
 GIT_BRANCH_OUTPUT_DETACHED_BRANCH = '''
-* (HEAD detached at origin/feature-2) 36418b4 Work on feature-2
-  feature-2                           36418b4 [origin/feature-2] Work on feature-2
-  feature3                           36418b4 Work on feature-2
-  master                             9b75494 [origin/master] Initialize repository.
+* (HEAD detached at origin/feature-2) 36418b4abc123 Work on feature-2
+  feature-2                           36418b4abc123 [origin/feature-2] Work on feature-2
+  feature3                           36418b4abc123 Work on feature-2
+  master                             9b75494abc123 [origin/master] Initialize repository.
 '''
 
 GIT_BRANCH_OUTPUT_DETACHED_HASH = '''
-* (HEAD detached at 36418b4) 36418b4 Work on feature-2
-  feature-2                   36418b4 [origin/feature-2] Work on feature-2
-  feature3                   36418b4 Work on feature-2
-  master                     9b75494 [origin/master] Initialize repository.
+* (HEAD detached at 36418b4) 36418b4abc123 Work on feature-2
+  feature-2                   36418b4abc123 [origin/feature-2] Work on feature-2
+  feature3                   36418b4abc123 Work on feature-2
+  master                     9b75494abc123 [origin/master] Initialize repository.
 '''
 
 GIT_BRANCH_OUTPUT_DETACHED_TAG = '''
-* (HEAD detached at tag1) 9b75494 Initialize repository.
-  feature-2                36418b4 [origin/feature-2] Work on feature-2
-  feature3                36418b4 Work on feature-2
-  master                  9b75494 [origin/master] Initialize repository.
+* (HEAD detached at tag1) 9b75494abc123 Initialize repository.
+  feature-2                36418b4abc123 [origin/feature-2] Work on feature-2
+  feature3                36418b4abc123 Work on feature-2
+  master                  9b75494abc123 [origin/master] Initialize repository.
 '''
 
 GIT_BRANCH_OUTPUT_UNTRACKED_BRANCH = '''
-  feature-2 36418b4 [origin/feature-2] Work on feature-2
-* feature3 36418b4 Work on feature-2
-  master   9b75494 [origin/master] Initialize repository.
+  feature-2 36418b4abc123 [origin/feature-2] Work on feature-2
+* feature3 36418b4abc123 Work on feature-2
+  master   9b75494abc123 [origin/master] Initialize repository.
 '''
 
 GIT_BRANCH_OUTPUT_TRACKING_BRANCH = '''
-* feature-2 36418b4 [origin/feature-2] Work on feature-2
-  feature3 36418b4 Work on feature-2
-  master   9b75494 [origin/master] Initialize repository.
+* feature-2 36418b4abc123 [origin/feature-2] Work on feature-2
+  feature3 36418b4abc123 Work on feature-2
+  master   9b75494abc123 [origin/master] Initialize repository.
 '''
 
 # NOTE(bja, 2017-11) order is important here. origin should be a
@@ -77,7 +80,7 @@ origin	/path/to/local/repo (push)
 
 
 class TestGitRepositoryCurrentRefBranch(unittest.TestCase):
-    """test the current_ref_from_branch_command on a git repository
+    """test the current_refs_from_branch_command on a git repository
     """
 
     def setUp(self):
@@ -108,9 +111,9 @@ class TestGitRepositoryCurrentRefBranch(unittest.TestCase):
         """
         git_output = GIT_BRANCH_OUTPUT_DETACHED_TAG
         expected = self._repo.tag()
-        result = self._repo._current_ref_from_branch_command(
+        result = self._repo._current_refs_from_branch_command(
             git_output)
-        self.assertEqual(result, expected)
+        self.assertIn(expected, result)
 
     def test_ref_detached_hash(self):
         """Test that we can identify ref is detached from a hash
@@ -118,9 +121,22 @@ class TestGitRepositoryCurrentRefBranch(unittest.TestCase):
         """
         git_output = GIT_BRANCH_OUTPUT_DETACHED_HASH
         expected = '36418b4'
-        result = self._repo._current_ref_from_branch_command(
+        result = self._repo._current_refs_from_branch_command(
             git_output)
-        self.assertEqual(result, expected)
+        self.assertIn(expected, result)
+
+    # pylint: disable=invalid-name
+    def test_ref_detached_hash_full_hash(self):
+        """Test that we can identify ref is detached from a hash, when
+        the expected is the full (non-abbreviated) hash
+
+        """
+        git_output = GIT_BRANCH_OUTPUT_DETACHED_HASH
+        expected = '36418b4abc123'
+        result = self._repo._current_refs_from_branch_command(
+            git_output)
+        self.assertIn(expected, result)
+    # pylint: enable=invalid-name
 
     def test_ref_detached_branch(self):
         """Test that we can identify ref is detached from a remote branch
@@ -128,9 +144,9 @@ class TestGitRepositoryCurrentRefBranch(unittest.TestCase):
         """
         git_output = GIT_BRANCH_OUTPUT_DETACHED_BRANCH
         expected = 'origin/feature-2'
-        result = self._repo._current_ref_from_branch_command(
+        result = self._repo._current_refs_from_branch_command(
             git_output)
-        self.assertEqual(result, expected)
+        self.assertIn(expected, result)
 
     def test_ref_detached_branch_v1_8(self):
         """Test that we can identify ref is detached from a remote branch
@@ -138,27 +154,27 @@ class TestGitRepositoryCurrentRefBranch(unittest.TestCase):
         """
         git_output = GIT_BRANCH_OUTPUT_DETACHED_BRANCH_v1_8
         expected = 'origin/feature2'
-        result = self._repo._current_ref_from_branch_command(
+        result = self._repo._current_refs_from_branch_command(
             git_output)
-        self.assertEqual(result, expected)
+        self.assertIn(expected, result)
 
     def test_ref_tracking_branch(self):
         """Test that we correctly identify we are on a tracking branch
         """
         git_output = GIT_BRANCH_OUTPUT_TRACKING_BRANCH
         expected = 'origin/feature-2'
-        result = self._repo._current_ref_from_branch_command(
+        result = self._repo._current_refs_from_branch_command(
             git_output)
-        self.assertEqual(result, expected)
+        self.assertIn(expected, result)
 
     def test_ref_untracked_branch(self):
         """Test that we correctly identify we are on an untracked branch
         """
         git_output = GIT_BRANCH_OUTPUT_UNTRACKED_BRANCH
         expected = 'feature3'
-        result = self._repo._current_ref_from_branch_command(
+        result = self._repo._current_refs_from_branch_command(
             git_output)
-        self.assertEqual(result, expected)
+        self.assertIn(expected, result)
 
     def test_ref_none(self):
         """Test that we can handle an empty string for output, e.g. not an git
@@ -166,9 +182,9 @@ class TestGitRepositoryCurrentRefBranch(unittest.TestCase):
 
         """
         git_output = EMPTY_STR
-        received = self._repo._current_ref_from_branch_command(
+        received = self._repo._current_refs_from_branch_command(
             git_output)
-        self.assertEqual(received, EMPTY_STR)
+        self.assertEqual([], received)
 
 
 class TestGitRepositoryCheckSync(unittest.TestCase):
@@ -427,6 +443,44 @@ class TestGitRepositoryCheckSync(unittest.TestCase):
         # check_sync should only modify the sync_state, not clean_state
         self.assertEqual(stat.clean_state, ExternalStatus.DEFAULT)
 
+    def test_sync_tag_abbrev_hash_on_detached_hash(self):
+        """Test expect tag that's actually an abbreviated hash, on
+        detached hash --> status ok
+
+        Note that it's acceptable to give a hash in the "tag" entry of
+        the configuration file.
+
+        """
+        stat = ExternalStatus()
+        self._repo._git_remote_verbose = self._git_remote_origin_upstream
+        self._repo._branch = ''
+        self._repo._tag = '36418b4'
+        self._repo._git_branch_vv = self._git_branch_detached_hash
+        self._repo._check_sync_logic(stat, self.TMP_FAKE_DIR)
+        self.assertEqual(stat.sync_state, ExternalStatus.STATUS_OK)
+        # check_sync should only modify the sync_state, not clean_state
+        self.assertEqual(stat.clean_state, ExternalStatus.DEFAULT)
+
+    def test_sync_tag_full_hash_on_detached_hash(self):
+        """Test expect tag that's actually a full (non-abbreviated) hash, on
+        detached hash --> status ok
+
+        Note that it's acceptable to give a hash in the "tag" entry of
+        the configuration file.
+
+        """
+        stat = ExternalStatus()
+        self._repo._git_remote_verbose = self._git_remote_origin_upstream
+        self._repo._branch = ''
+        # We're pretending that this 13-character hash is actually a
+        # full (non-abbreviated) hash
+        self._repo._tag = '36418b4abc123'
+        self._repo._git_branch_vv = self._git_branch_detached_hash
+        self._repo._check_sync_logic(stat, self.TMP_FAKE_DIR)
+        self.assertEqual(stat.sync_state, ExternalStatus.STATUS_OK)
+        # check_sync should only modify the sync_state, not clean_state
+        self.assertEqual(stat.clean_state, ExternalStatus.DEFAULT)
+
     # ----------------------------------------------------------------
     #
     # Tests where external description specifies a branch
@@ -621,13 +675,13 @@ class TestGitRegExp(unittest.TestCase):
         """Common constans
         """
         self._detached_git_v2_tmpl = string.Template(
-            '* (HEAD detached at $ref) 36418b4 Work on feature-2')
+            '* (HEAD detached at $ref) 36418b4abc123 Work on feature-2')
 
         self._detached_git_v1_tmpl = string.Template(
-            '* (detached from $ref) 36418b4 Work on feature-2')
+            '* (detached from $ref) 36418b4abc123 Work on feature-2')
 
         self._tracking_tmpl = string.Template(
-            '* feature-2 36418b4 [$ref] Work on feature-2')
+            '* feature-2 36418b4abc123 [$ref] Work on feature-2')
 
     #
     # RE_DETACHED
