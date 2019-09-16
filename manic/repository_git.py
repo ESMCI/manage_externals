@@ -103,7 +103,7 @@ class GitRepository(Repository):
         """
         cwd = os.getcwd()
         os.chdir(base_dir_path)
-        self._git_clone(self._url, repo_dir_name, verbosity)
+        self._git_clone(self, repo_dir_name, verbosity)
         os.chdir(cwd)
 
     def _current_ref(self):
@@ -250,7 +250,7 @@ class GitRepository(Repository):
             data = data.split()
             name = data[0].strip()
             url = data[1].strip()
-            if self._url == url:
+            if self._url == url or not self._port is EMPTY_STR:
                 remote_name = name
                 break
         return remote_name
@@ -750,11 +750,23 @@ class GitRepository(Repository):
     #
     # ----------------------------------------------------------------
     @staticmethod
-    def _git_clone(url, repo_dir_name, verbosity):
+    def _git_clone(self, repo_dir_name, verbosity):
         """Run git clone for the side effect of creating a repository.
         """
         cmd = ['git', 'clone', '--quiet']
         subcmd = None
+        url = self._url
+
+        # add port
+        if not self._port is EMPTY_STR:
+             ind1 = url.find('//')+2
+             ind2 = url[ind1:].find('/')
+             url = url[:ind1+ind2] + ':' + self._port + url[ind1+ind2:]
+
+        # add user name
+        if not self._user_name is EMPTY_STR:
+             ind1 = url.find('//')+2
+             url = url[:ind1] + self._user_name + '@' + url[ind1:]
 
         cmd.extend([url, repo_dir_name])
         if verbosity >= VERBOSITY_VERBOSE:

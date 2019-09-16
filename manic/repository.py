@@ -1,6 +1,8 @@
 """Base class representation of a repository
 """
 
+import os
+
 from .externals_description import ExternalsDescription
 from .utils import fatal_error
 from .global_constants import EMPTY_STR
@@ -22,6 +24,8 @@ class Repository(object):
         self._hash = repo[ExternalsDescription.HASH]
         self._url = repo[ExternalsDescription.REPO_URL]
         self._sparse = repo[ExternalsDescription.SPARSE]
+        self._port = repo[ExternalsDescription.PORT]
+        self._user_name = repo[ExternalsDescription.USER_NAME]
 
         if self._url is EMPTY_STR:
             fatal_error('repo must have a URL')
@@ -29,6 +33,12 @@ class Repository(object):
         if ((self._tag is EMPTY_STR) and (self._branch is EMPTY_STR) and
                 (self._hash is EMPTY_STR)):
             fatal_error('{0} repo must have a branch, tag or hash element')
+
+        if self._user_name.lower() == 'GIT_AUTHOR_NAME'.lower():
+            # check GIT_AUTHOR_NAME environment variable
+            git_author_name = os.getenv('GIT_AUTHOR_NAME')
+            if not git_author_name == None:
+                 self._user_name = git_author_name
 
         ref_count = 0
         if self._tag is not EMPTY_STR:

@@ -352,6 +352,8 @@ class ExternalsDescription(dict):
     REQUIRED = 'required'
     TAG = 'tag'
     SPARSE = 'sparse'
+    PORT = 'port'
+    USER_NAME = 'user_name'
 
     PROTOCOL_EXTERNALS_ONLY = 'externals_only'
     PROTOCOL_GIT = 'git'
@@ -376,6 +378,8 @@ class ExternalsDescription(dict):
                              BRANCH: 'string',
                              HASH: 'string',
                              SPARSE: 'string',
+                             PORT: 'string',
+                             USER_NAME: 'string',
                             }
                      }
 
@@ -566,6 +570,10 @@ class ExternalsDescription(dict):
                 self[field][self.REPO][self.REPO_URL] = EMPTY_STR
             if self.SPARSE not in self[field][self.REPO]:
                 self[field][self.REPO][self.SPARSE] = EMPTY_STR
+            if self.PORT not in self[field][self.REPO]:
+                self[field][self.REPO][self.PORT] = EMPTY_STR
+            if self.USER_NAME not in self[field][self.REPO]:
+                self[field][self.REPO][self.USER_NAME] = EMPTY_STR
 
             # from_submodule has a complex relationship with other fields
             if self.SUBMODULE in self[field]:
