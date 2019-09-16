@@ -39,6 +39,8 @@ class Repository(object):
             git_author_name = os.getenv('GIT_AUTHOR_NAME')
             if not git_author_name == None:
                  self._user_name = git_author_name
+            else:
+                 self._user_name = EMPTY_STR
 
         ref_count = 0
         if self._tag is not EMPTY_STR:
