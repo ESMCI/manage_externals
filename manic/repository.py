@@ -12,6 +12,8 @@ class Repository(object):
     """
     Class to represent and operate on a repository description.
     """
+    # pylint: disable=too-many-instance-attributes
+    # Nine is reasonable in this case.
 
     def __init__(self, component_name, repo):
         """
@@ -37,10 +39,10 @@ class Repository(object):
         if self._user_name.lower() == 'GIT_AUTHOR_NAME'.lower():
             # check GIT_AUTHOR_NAME environment variable
             git_author_name = os.getenv('GIT_AUTHOR_NAME')
-            if not git_author_name == None:
-                 self._user_name = git_author_name
+            if not git_author_name is None:
+                self._user_name = git_author_name
             else:
-                 self._user_name = EMPTY_STR
+                self._user_name = EMPTY_STR
 
         ref_count = 0
         if self._tag is not EMPTY_STR:

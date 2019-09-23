@@ -37,7 +37,9 @@ class TestCreateRepositoryDict(unittest.TestCase):
                       ExternalsDescription.TAG: 'junk_tag',
                       ExternalsDescription.BRANCH: EMPTY_STR,
                       ExternalsDescription.HASH: EMPTY_STR,
-                      ExternalsDescription.SPARSE: EMPTY_STR, }
+                      ExternalsDescription.SPARSE: EMPTY_STR,
+                      ExternalsDescription.PORT: EMPTY_STR,
+                      ExternalsDescription.USER_NAME: EMPTY_STR, }
 
     def test_create_repo_git(self):
         """Verify that several possible names for the 'git' protocol
@@ -97,7 +99,9 @@ class TestRepository(unittest.TestCase):
                      ExternalsDescription.TAG: tag,
                      ExternalsDescription.BRANCH: EMPTY_STR,
                      ExternalsDescription.HASH: EMPTY_STR,
-                     ExternalsDescription.SPARSE: EMPTY_STR, }
+                     ExternalsDescription.SPARSE: EMPTY_STR,
+                     ExternalsDescription.PORT: EMPTY_STR,
+                     ExternalsDescription.USER_NAME: EMPTY_STR, }
         repo = Repository(name, repo_info)
         print(repo.__dict__)
         self.assertEqual(repo.tag(), tag)
@@ -115,7 +119,9 @@ class TestRepository(unittest.TestCase):
                      ExternalsDescription.BRANCH: branch,
                      ExternalsDescription.TAG: EMPTY_STR,
                      ExternalsDescription.HASH: EMPTY_STR,
-                     ExternalsDescription.SPARSE: EMPTY_STR, }
+                     ExternalsDescription.SPARSE: EMPTY_STR,
+                     ExternalsDescription.PORT: EMPTY_STR,
+                     ExternalsDescription.USER_NAME: EMPTY_STR, }
         repo = Repository(name, repo_info)
         print(repo.__dict__)
         self.assertEqual(repo.branch(), branch)
@@ -129,12 +135,16 @@ class TestRepository(unittest.TestCase):
         url = 'test_url'
         ref = 'deadc0de'
         sparse = EMPTY_STR
+        port = EMPTY_STR
+        user_name = EMPTY_STR
         repo_info = {ExternalsDescription.PROTOCOL: protocol,
                      ExternalsDescription.REPO_URL: url,
                      ExternalsDescription.BRANCH: EMPTY_STR,
                      ExternalsDescription.TAG: EMPTY_STR,
                      ExternalsDescription.HASH: ref,
-                     ExternalsDescription.SPARSE: sparse, }
+                     ExternalsDescription.SPARSE: sparse,
+                     ExternalsDescription.PORT: port,
+                     ExternalsDescription.USER_NAME: user_name, }
         repo = Repository(name, repo_info)
         print(repo.__dict__)
         self.assertEqual(repo.hash(), ref)
@@ -152,12 +162,16 @@ class TestRepository(unittest.TestCase):
         tag = 'test_tag'
         ref = EMPTY_STR
         sparse = EMPTY_STR
+        port = EMPTY_STR
+        user_name = EMPTY_STR
         repo_info = {ExternalsDescription.PROTOCOL: protocol,
                      ExternalsDescription.REPO_URL: url,
                      ExternalsDescription.BRANCH: branch,
                      ExternalsDescription.TAG: tag,
                      ExternalsDescription.HASH: ref,
-                     ExternalsDescription.SPARSE: sparse, }
+                     ExternalsDescription.SPARSE: sparse,
+                     ExternalsDescription.PORT: port,
+                     ExternalsDescription.USER_NAME: user_name, }
         with self.assertRaises(RuntimeError):
             Repository(name, repo_info)
 
@@ -173,12 +187,16 @@ class TestRepository(unittest.TestCase):
         tag = 'test_tag'
         ref = 'deadc0de'
         sparse = EMPTY_STR
+        port = EMPTY_STR
+        user_name = EMPTY_STR
         repo_info = {ExternalsDescription.PROTOCOL: protocol,
                      ExternalsDescription.REPO_URL: url,
                      ExternalsDescription.BRANCH: branch,
                      ExternalsDescription.TAG: tag,
                      ExternalsDescription.HASH: ref,
-                     ExternalsDescription.SPARSE: sparse, }
+                     ExternalsDescription.SPARSE: sparse,
+                     ExternalsDescription.PORT: port,
+                     ExternalsDescription.USER_NAME: user_name, }
         with self.assertRaises(RuntimeError):
             Repository(name, repo_info)
 
@@ -194,12 +212,16 @@ class TestRepository(unittest.TestCase):
         tag = EMPTY_STR
         ref = EMPTY_STR
         sparse = EMPTY_STR
+        port = EMPTY_STR
+        user_name = EMPTY_STR
         repo_info = {ExternalsDescription.PROTOCOL: protocol,
                      ExternalsDescription.REPO_URL: url,
                      ExternalsDescription.BRANCH: branch,
                      ExternalsDescription.TAG: tag,
                      ExternalsDescription.HASH: ref,
-                     ExternalsDescription.SPARSE: sparse, }
+                     ExternalsDescription.SPARSE: sparse,
+                     ExternalsDescription.PORT: port,
+                     ExternalsDescription.USER_NAME: user_name, }
         with self.assertRaises(RuntimeError):
             Repository(name, repo_info)
 

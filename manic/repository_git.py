@@ -749,7 +749,6 @@ class GitRepository(Repository):
     # system call to git for sideffects modifying the working tree
     #
     # ----------------------------------------------------------------
-    @staticmethod
     def _git_clone(self, repo_dir_name, verbosity):
         """Run git clone for the side effect of creating a repository.
         """
@@ -758,15 +757,15 @@ class GitRepository(Repository):
         url = self._url
 
         # add port
-        if not self._port is EMPTY_STR:
-             ind1 = url.find('//')+2
-             ind2 = url[ind1:].find('/')
-             url = url[:ind1+ind2] + ':' + self._port + url[ind1+ind2:]
+        if self._port is not EMPTY_STR:
+            ind1 = url.find('//')+2
+            ind2 = url[ind1:].find('/')
+            url = url[:ind1+ind2] + ':' + self._port + url[ind1+ind2:]
 
         # add user name
-        if not self._user_name is EMPTY_STR:
-             ind1 = url.find('//')+2
-             url = url[:ind1] + self._user_name + '@' + url[ind1:]
+        if self._user_name is not EMPTY_STR:
+            ind1 = url.find('//')+2
+            url = url[:ind1] + self._user_name + '@' + url[ind1:]
 
         cmd.extend([url, repo_dir_name])
         if verbosity >= VERBOSITY_VERBOSE:
