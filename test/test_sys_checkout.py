@@ -576,7 +576,7 @@ class BaseTestSysCheckout(unittest.TestCase):
             dest_dir = dest_dir_in
 
         # pylint: disable=W0212
-        GitRepository._git_clone(parent_repo_dir, dest_dir, VERBOSITY_DEFAULT)
+        GitRepository._git_clone(self, parent_repo_dir, dest_dir, VERBOSITY_DEFAULT)
         return dest_dir
 
     @staticmethod
