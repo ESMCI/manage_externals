@@ -103,7 +103,25 @@ class GitRepository(Repository):
         """
         cwd = os.getcwd()
         os.chdir(base_dir_path)
-        self._git_clone(self, repo_dir_name, verbosity)
+
+        # get url
+        url = self._url
+
+        # add port
+        if self._port is not EMPTY_STR:
+            ind1 = url.find('//')+2
+            ind2 = url[ind1:].find('/')
+            url = url[:ind1+ind2] + ':' + self._port + url[ind1+ind2:]
+
+        # add user name
+        if self._user_name is not EMPTY_STR:
+            ind1 = url.find('//')+2
+            url = url[:ind1] + self._user_name + '@' + url[ind1:]
+
+        # update url
+        self._url = url
+
+        self._git_clone(url, repo_dir_name, verbosity)
         os.chdir(cwd)
 
     def _current_ref(self):
@@ -749,23 +767,12 @@ class GitRepository(Repository):
     # system call to git for sideffects modifying the working tree
     #
     # ----------------------------------------------------------------
-    def _git_clone(self, repo_dir_name, verbosity):
+    @staticmethod
+    def _git_clone(url, repo_dir_name, verbosity):
         """Run git clone for the side effect of creating a repository.
         """
         cmd = ['git', 'clone', '--quiet']
         subcmd = None
-        url = self._url
-
-        # add port
-        if self._port is not EMPTY_STR:
-            ind1 = url.find('//')+2
-            ind2 = url[ind1:].find('/')
-            url = url[:ind1+ind2] + ':' + self._port + url[ind1+ind2:]
-
-        # add user name
-        if self._user_name is not EMPTY_STR:
-            ind1 = url.find('//')+2
-            url = url[:ind1] + self._user_name + '@' + url[ind1:]
 
         cmd.extend([url, repo_dir_name])
         if verbosity >= VERBOSITY_VERBOSE:
