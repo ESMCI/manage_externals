@@ -91,6 +91,9 @@ class _External(object):
         return self._local_path
 
     def get_prereq(self):
+        """
+        Return the external object's prereq if set
+        """
         return self._prereq
 
     def status(self):
@@ -304,7 +307,7 @@ class SourceTree(object):
         for comp in load_comps:
             printlog('{0}, '.format(comp), end='')
             stat = self._all_components[comp].status()
-            stat_final = {}
+
             for name in stat.keys():
                 # check if we need to append the relative_path_base to
                 # the path so it will be sorted in the correct order.
