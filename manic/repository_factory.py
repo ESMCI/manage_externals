@@ -10,6 +10,7 @@ from .repository_svn import SvnRepository
 from .externals_description import ExternalsDescription
 from .utils import fatal_error
 
+# pylint: disable=R0204
 
 def create_repository(component_name, repo_info, svn_ignore_ancestry=False):
     """Determine what type of repository we have, i.e. git or svn, and

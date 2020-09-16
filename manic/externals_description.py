@@ -263,6 +263,8 @@ def read_gitmodules_file(root_dir, file_name):
 
     return externals_description
 
+# pylint: disable=R0204
+
 def create_externals_description(
         model_data, model_format='cfg', components=None, exclude=None, parent_repo=None):
 

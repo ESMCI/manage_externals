@@ -226,6 +226,7 @@ all repositories without entering your authentication information.
            working_directory=working_directory,
            hanging_sec=_HANGING_SEC))
 
+# pylint: disable=R0204
 
 def execute_subprocess(commands, status_to_caller=False,
                        output_to_caller=False):
