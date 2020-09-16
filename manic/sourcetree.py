@@ -307,8 +307,8 @@ class SourceTree(object):
         for comp in load_comps:
             printlog('{0}, '.format(comp), end='')
             stat = self._all_components[comp].status()
-
-            for name in stat.keys():
+            stat_keys = list(stat.keys())
+            for name in stat_keys:
                 # check if we need to append the relative_path_base to
                 # the path so it will be sorted in the correct order.
                 if not stat[name].path.startswith(relative_path_base):
@@ -343,6 +343,7 @@ class SourceTree(object):
             tmp_comps = [load_comp]
         else:
             tmp_comps = self._required_compnames
+
         load_comps = []
         for comp in tmp_comps:
             prereq = self._all_components[comp].get_prereq()
