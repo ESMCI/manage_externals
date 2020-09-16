@@ -367,7 +367,9 @@ class SourceTree(object):
         for comp in comps_in:
             try:
                 comps_out = self.add_comp(comp, comps_out)
-            except Exception as e:
+                #except RecursionError as e:
+                # RecursionError only in py3.5 or later
+            except RuntimeError as e:
                 fatal_error("Circular prereq Dependancy detected")
         return comps_out
 
