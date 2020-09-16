@@ -345,18 +345,8 @@ class SourceTree(object):
         else:
             tmp_comps = self._required_compnames
 
-        load_comps = []
-        for comp in tmp_comps:
-            prereq = self._all_components[comp].get_prereq()
-            if prereq:
-                if prereq in self._all_components and prereq not in load_comps:
-                    load_comps.append(prereq)
-                else:
-                    fatal_error("prereq {} of component {} not found".format(prereq, comp))
-                load_comps.append(comp)
-            elif comp not in load_comps:
-                load_comps.append(comp)
-
+        load_comps = self.order_comps_by_prereq(tmp_comps)
+        printlog ("load_comps {}".format(load_comps))
         # checkout the primary externals
         for comp in load_comps:
             if verbosity < VERBOSITY_VERBOSE:
@@ -371,3 +361,25 @@ class SourceTree(object):
         # now give each external an opportunitity to checkout it's externals.
         for comp in load_comps:
             self._all_components[comp].checkout_externals(verbosity, load_all)
+
+    def order_comps_by_prereq(self, comps_in):
+        comps_out = []
+        for comp in comps_in:
+            try:
+                comps_out = self.add_comp(comp, comps_out)
+            except Exception as e:
+                fatal_error("Circular prereq Dependancy detected")
+        return comps_out
+
+    def add_comp(self, comp, comps):
+        if comp in comps:
+            return comps
+        prereq = self._all_components[comp].get_prereq()
+        if prereq and prereq not in self._all_components:
+            fatal_error("prereq {} of component {} not found".format(prereq, comp))
+        if not prereq or prereq in comps and comp not in comps:
+            comps.append(comp)
+        elif prereq in self._all_components:
+            comps = self.add_comp(prereq, comps)
+
+        return comps
