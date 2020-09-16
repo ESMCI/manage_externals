@@ -323,6 +323,7 @@ class SourceTree(object):
 
         return summary
 
+    # pylint: disable=R0912
     def checkout(self, verbosity, load_all, load_comp=None):
         """
         Checkout or update indicated components into the the configured
@@ -348,15 +349,13 @@ class SourceTree(object):
         for comp in tmp_comps:
             prereq = self._all_components[comp].get_prereq()
             if prereq:
-                if prereq in self._all_components:
-                    if prereq not in load_comps:
-                        load_comps.append(prereq)
-                    load_comps.append(comp)
+                if prereq in self._all_components and prereq not in load_comps:
+                    load_comps.append(prereq)
                 else:
                     fatal_error("prereq {} of component {} not found".format(prereq, comp))
-            else:
-                if comp not in load_comps:
-                    load_comps.append(comp)
+                load_comps.append(comp)
+            elif comp not in load_comps:
+                load_comps.append(comp)
 
         # checkout the primary externals
         for comp in load_comps:
