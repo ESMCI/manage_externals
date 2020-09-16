@@ -363,17 +363,24 @@ class SourceTree(object):
             self._all_components[comp].checkout_externals(verbosity, load_all)
 
     def order_comps_by_prereq(self, comps_in):
+        """
+        put the comps into an order so that comp prereqs preceed comp
+        If a circular dependancy is passed in fail with recursion error
+        """
         comps_out = []
         for comp in comps_in:
             try:
                 comps_out = self.add_comp(comp, comps_out)
                 #except RecursionError as e:
                 # RecursionError only in py3.5 or later
-            except RuntimeError as e:
-                fatal_error("Circular prereq Dependancy detected")
+            except RuntimeError as error:
+                fatal_error("Circular prereq Dependancy detected {}".format(error))
         return comps_out
 
     def add_comp(self, comp, comps):
+        """
+        Recursive add_comp based on prereq
+        """
         if comp in comps:
             return comps
         prereq = self._all_components[comp].get_prereq()
