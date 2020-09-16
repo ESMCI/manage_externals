@@ -42,6 +42,7 @@ class _External(object):
         """
         self._name = name
         self._repo = None
+        self._prereq = None
         self._externals = EMPTY_STR
         self._externals_sourcetree = None
         self._stat = ExternalStatus()
@@ -62,6 +63,7 @@ class _External(object):
 
         self._required = ext_description[ExternalsDescription.REQUIRED]
         self._externals = ext_description[ExternalsDescription.EXTERNALS]
+        self._prereq = ext_description[ExternalsDescription.REPO][ExternalsDescription.PREREQ]
         # Treat a .gitmodules file as a backup externals config
         if not self._externals:
             if GitRepository.has_submodules(self._repo_dir_path):
@@ -87,6 +89,9 @@ class _External(object):
         Return the external object's path
         """
         return self._local_path
+
+    def get_prereq(self):
+        return self._prereq
 
     def status(self):
         """
@@ -303,16 +308,15 @@ class SourceTree(object):
             for name in stat.keys():
                 # check if we need to append the relative_path_base to
                 # the path so it will be sorted in the correct order.
-                if stat[name].path.startswith(relative_path_base):
-                    # use as is, without any changes to path
-                    stat_final[name] = stat[name]
-                else:
-                    # append relative_path_base to path and store under key = updated path
-                    modified_path = os.path.join(relative_path_base,
-                                                 stat[name].path)
-                    stat_final[modified_path] = stat[name]
-                    stat_final[modified_path].path = modified_path
-            summary.update(stat_final)
+                if not stat[name].path.startswith(relative_path_base):
+                    stat[name].path = os.path.join(relative_path_base,
+                                                   stat[name].path)
+                    # store under key = updated path, and delete the
+                    # old key.
+                    comp_stat = stat[name]
+                    del stat[name]
+                    stat[comp_stat.path] = comp_stat
+            summary.update(stat)
 
         return summary
 
@@ -331,11 +335,24 @@ class SourceTree(object):
             printlog('Checking out externals: ', end='')
 
         if load_all:
-            load_comps = self._all_components.keys()
+            tmp_comps = self._all_components.keys()
         elif load_comp is not None:
-            load_comps = [load_comp]
+            tmp_comps = [load_comp]
         else:
-            load_comps = self._required_compnames
+            tmp_comps = self._required_compnames
+        load_comps = []
+        for comp in tmp_comps:
+            prereq = self._all_components[comp].get_prereq()
+            if prereq:
+                if prereq in self._all_components:
+                    if prereq not in load_comps:
+                        load_comps.append(prereq)
+                    load_comps.append(comp)
+                else:
+                    fatal_error("prereq {} of component {} not found".format(prereq, comp))
+            else:
+                if comp not in load_comps:
+                    load_comps.append(comp)
 
         # checkout the primary externals
         for comp in load_comps:

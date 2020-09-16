@@ -265,6 +265,7 @@ def read_gitmodules_file(root_dir, file_name):
 
 def create_externals_description(
         model_data, model_format='cfg', components=None, exclude=None, parent_repo=None):
+
     """Create the a externals description object from the provided data
     """
     externals_description = None
@@ -355,6 +356,7 @@ class ExternalsDescription(dict):
     REQUIRED = 'required'
     TAG = 'tag'
     SPARSE = 'sparse'
+    PREREQ = 'prereq'
 
     PROTOCOL_EXTERNALS_ONLY = 'externals_only'
     PROTOCOL_GIT = 'git'
@@ -379,6 +381,7 @@ class ExternalsDescription(dict):
                              BRANCH: 'string',
                              HASH: 'string',
                              SPARSE: 'string',
+                             PREREQ: 'string',
                             }
                      }
 
@@ -388,7 +391,6 @@ class ExternalsDescription(dict):
 
         """
         dict.__init__(self)
-
         self._schema_major = None
         self._schema_minor = None
         self._schema_patch = None
@@ -569,6 +571,8 @@ class ExternalsDescription(dict):
                 self[field][self.REPO][self.REPO_URL] = EMPTY_STR
             if self.SPARSE not in self[field][self.REPO]:
                 self[field][self.REPO][self.SPARSE] = EMPTY_STR
+            if self.PREREQ not in self[field][self.REPO]:
+                self[field][self.REPO][self.PREREQ] = EMPTY_STR
 
             # from_submodule has a complex relationship with other fields
             if self.SUBMODULE in self[field]:
@@ -766,7 +770,7 @@ class ExternalsDescriptionConfigV1(ExternalsDescription):
         """
         model_data.remove_section(DESCRIPTION_SECTION)
 
-    def _parse_cfg(self, cfg_data, components=None, exclude=None):
+    def _parse_cfg(self, cfg_data, components=None):
         """Parse a config_parser object into a externals description.
         """
         def list_to_dict(input_list, convert_to_lower_case=True):
