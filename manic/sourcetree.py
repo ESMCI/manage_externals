@@ -346,7 +346,7 @@ class SourceTree(object):
             tmp_comps = self._required_compnames
 
         load_comps = self.order_comps_by_prereq(tmp_comps)
-        printlog ("load_comps: {}".format(load_comps))
+        printlog("load_comps: {}".format(load_comps))
         # checkout the primary externals
         for comp in load_comps:
             if verbosity < VERBOSITY_VERBOSE:
