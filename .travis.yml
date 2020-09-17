@@ -12,7 +12,7 @@ before_script:
   - git --version
 script:
   - cd test; make test
-  - make lint
+  - cd test; make lint
 after_success:
   - cd test; make coverage
   - coveralls
