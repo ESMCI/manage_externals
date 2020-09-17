@@ -57,7 +57,7 @@ class TestCfgSchemaVersion(unittest.TestCase):
         """
         self._config = config_parser()
         self._config.add_section('section1')
-        self._config.set('section1', 'keword', 'value')
+        self._config.set('section1', 'keyword', 'value')
 
         self._config.add_section(DESCRIPTION_SECTION)
 
@@ -107,7 +107,7 @@ class TestCfgSchemaVersion(unittest.TestCase):
             get_cfg_schema_version(self._config)
 
 
-class TestModelDescritionConfigV1(unittest.TestCase):
+class TestModelDescriptionConfigV1(unittest.TestCase):
     """Test that parsing config/ini fileproduces a correct dictionary
     for the externals description.
 
@@ -124,6 +124,7 @@ class TestModelDescritionConfigV1(unittest.TestCase):
         self._comp1_tag = 'a_nice_tag_v1'
         self._comp1_is_required = 'True'
         self._comp1_externals = ''
+        self._comp1_prereq = ''
 
         self._comp2_name = 'comp2'
         self._comp2_path = 'path/to/comp2'
@@ -132,6 +133,7 @@ class TestModelDescritionConfigV1(unittest.TestCase):
         self._comp2_branch = 'a_very_nice_branch'
         self._comp2_is_required = 'False'
         self._comp2_externals = 'path/to/comp2.cfg'
+        self._comp2_prereq = ''
 
     def _setup_comp1(self, config):
         """Boiler plate construction of xml string for componet 1
@@ -142,6 +144,8 @@ class TestModelDescritionConfigV1(unittest.TestCase):
         config.set(self._comp1_name, 'repo_url', self._comp1_url)
         config.set(self._comp1_name, 'tag', self._comp1_tag)
         config.set(self._comp1_name, 'required', self._comp1_is_required)
+        if self._comp1_prereq:
+            config.set(self._comp1_name, 'prereq', self._comp1_prereq)
 
     def _setup_comp2(self, config):
         """Boiler plate construction of xml string for componet 2
@@ -153,6 +157,8 @@ class TestModelDescritionConfigV1(unittest.TestCase):
         config.set(self._comp2_name, 'branch', self._comp2_branch)
         config.set(self._comp2_name, 'required', self._comp2_is_required)
         config.set(self._comp2_name, 'externals', self._comp2_externals)
+        if self._comp2_prereq:
+            config.set(self._comp1_name, 'prereq', self._comp2_prereq)
 
     @staticmethod
     def _setup_externals_description(config):
@@ -175,6 +181,8 @@ class TestModelDescritionConfigV1(unittest.TestCase):
         self.assertEqual(repo[ExternalsDescription.REPO_URL], self._comp1_url)
         self.assertEqual(repo[ExternalsDescription.TAG], self._comp1_tag)
         self.assertEqual(EMPTY_STR, comp1[ExternalsDescription.EXTERNALS])
+        self.assertEqual(repo[ExternalsDescription.PREREQ], self._comp1_prereq)
+
 
     def _check_comp2(self, model):
         """Test that component two was constucted correctly.
@@ -190,6 +198,20 @@ class TestModelDescritionConfigV1(unittest.TestCase):
         self.assertEqual(repo[ExternalsDescription.BRANCH], self._comp2_branch)
         self.assertEqual(self._comp2_externals,
                          comp2[ExternalsDescription.EXTERNALS])
+        self.assertEqual(repo[ExternalsDescription.PREREQ], self._comp2_prereq)
+
+    def test_no_prereq_error(self):
+        """
+        Test that an invalid prereq raises an error
+        """
+        config = config_parser()
+        self._setup_comp1(config)
+        config.set(self._comp1_name, 'prereq', 'wilma')
+        self._setup_externals_description(config)
+        model = ExternalsDescriptionConfigV1(config)
+        print(model)
+        self._comp1_prereq = 'wilma'
+        self._check_comp1(model)
 
     def test_one_tag_required(self):
         """Test that a component source with a tag is correctly parsed.

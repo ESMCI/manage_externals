@@ -368,6 +368,13 @@ class SourceTree(object):
         If a circular dependancy is passed in fail with recursion error
         """
         comps_out = []
+        # First loop over all comps and check that prereq if provided is valid.
+        for comp in comps_in:
+            prereq = self._all_components[comp].get_prereq()
+            if prereq and prereq not in self._all_components:
+                fatal_error("prereq {} of component {} not found".format(prereq, comp))
+
+        # Now recursively reorder comps to satisfy prereq list
         for comp in comps_in:
             try:
                 comps_out = self.add_comp(comp, comps_out)
@@ -384,11 +391,9 @@ class SourceTree(object):
         if comp in comps:
             return comps
         prereq = self._all_components[comp].get_prereq()
-        if prereq and prereq not in self._all_components:
-            fatal_error("prereq {} of component {} not found".format(prereq, comp))
         if not prereq or prereq in comps and comp not in comps:
             comps.append(comp)
-        elif prereq in self._all_components:
+        else:
             comps = self.add_comp(prereq, comps)
 
         return comps

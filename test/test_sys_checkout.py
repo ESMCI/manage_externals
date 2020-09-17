@@ -261,7 +261,7 @@ class GenerateExternalsDescriptionCfgV1(object):
     def create_section(self, repo_type, name, tag='', branch='',
                        ref_hash='', required=True, path=EXTERNALS_NAME,
                        externals='', repo_path=None, from_submodule=False,
-                       sparse=''):
+                       sparse='', prereq=None):
         # pylint: disable=too-many-branches
         """Create a config section with autofilling some items and handling
         optional items.
@@ -314,6 +314,9 @@ class GenerateExternalsDescriptionCfgV1(object):
 
         if from_submodule:
             self._config.set(name, ExternalsDescription.SUBMODULE, "True")
+
+        if prereq:
+            self._config.set(name, ExternalsDescription.PREREQ, prereq)
 
     def create_section_ext_only(self, name,
                                 required=True, externals=CFG_SUB_NAME):
