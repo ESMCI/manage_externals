@@ -346,7 +346,7 @@ class SourceTree(object):
             tmp_comps = self._required_compnames
 
         load_comps = self.order_comps_by_prereq(tmp_comps)
-        printlog ("load_comps {}".format(load_comps))
+        printlog ("load_comps: {}".format(load_comps))
         # checkout the primary externals
         for comp in load_comps:
             if verbosity < VERBOSITY_VERBOSE:
@@ -388,12 +388,13 @@ class SourceTree(object):
         """
         Recursive add_comp based on prereq
         """
+
         if comp in comps:
             return comps
         prereq = self._all_components[comp].get_prereq()
-        if not prereq or prereq in comps and comp not in comps:
-            comps.append(comp)
-        else:
+        if prereq and prereq not in comps:
             comps = self.add_comp(prereq, comps)
+        if comp not in comps:
+            comps.append(comp)
 
         return comps
