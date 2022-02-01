@@ -21,36 +21,9 @@ import logging
 import os
 import os.path
 import re
-
-# ConfigParser in python2 was renamed to configparser in python3.
-# In python2, ConfigParser returns byte strings, str, instead of unicode.
-# We need unicode to be compatible with xml and json parser and python3.
-try:
-    # python2
-    from ConfigParser import SafeConfigParser as config_parser
-    from ConfigParser import MissingSectionHeaderError
-    from ConfigParser import NoSectionError, NoOptionError
-
-    USE_PYTHON2 = True
-
-    def config_string_cleaner(text):
-        """convert strings into unicode
-        """
-        return text.decode('utf-8')
-except ImportError:
-    # python3
-    from configparser import ConfigParser as config_parser
-    from configparser import MissingSectionHeaderError
-    from configparser import NoSectionError, NoOptionError
-
-    USE_PYTHON2 = False
-
-    def config_string_cleaner(text):
-        """Python3 already uses unicode strings, so just return the string
-        without modification.
-
-        """
-        return text
+from configparser import ConfigParser as config_parser
+from configparser import MissingSectionHeaderError
+from configparser import NoSectionError, NoOptionError
 
 from .utils import printlog, fatal_error, str_to_bool, expand_local_url
 from .utils import execute_subprocess
@@ -175,7 +148,7 @@ def parse_submodules_desc_section(section_items, file_path):
     path = None
     url = None
     for item in section_items:
-        name = item[0].strip().lower()
+        name = item[0].strip()
         if name == 'path':
             path = item[1].strip()
         elif name == 'url':
@@ -191,11 +164,6 @@ def parse_submodules_desc_section(section_items, file_path):
     return path, url
 
 def read_gitmodules_file(root_dir, file_name):
-    # pylint: disable=deprecated-method
-    # Disabling this check because the method is only used for python2
-    # pylint: disable=too-many-locals
-    # pylint: disable=too-many-branches
-    # pylint: disable=too-many-statements
     """Read a .gitmodules file and convert it to be compatible with an
     externals description.
     """
@@ -214,10 +182,7 @@ def read_gitmodules_file(root_dir, file_name):
     externals_description = None
     try:
         config = config_parser()
-        if USE_PYTHON2:
-            config.readfp(LstripReader(file_path), filename=file_name)
-        else:
-            config.read_file(LstripReader(file_path), source=file_name)
+        config.read_file(LstripReader(file_path), source=file_name)
 
         submodules_description = config
     except MissingSectionHeaderError:
@@ -403,7 +368,6 @@ class ExternalsDescription(dict):
 
         """
         dict.__init__(self)
-
         self._schema_major = None
         self._schema_minor = None
         self._schema_patch = None
@@ -789,15 +753,15 @@ class ExternalsDescriptionConfigV1(ExternalsDescription):
             """
             output_dict = {}
             for item in input_list:
-                key = config_string_cleaner(item[0].strip())
-                value = config_string_cleaner(item[1].strip())
+                key = item[0].strip()
+                value = item[1].strip()
                 if convert_to_lower_case:
                     key = key.lower()
                 output_dict[key] = value
             return output_dict
 
         for section in cfg_data.sections():
-            name = config_string_cleaner(section.lower().strip())
+            name = section.strip()
             if (components and name not in components) or (exclude and name in exclude):
                 continue
             self[name] = {}
