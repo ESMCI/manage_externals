@@ -29,11 +29,6 @@ setUpModule.
 # temporary directory be preserved....
 # pylint: disable=too-many-lines
 
-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from __future__ import print_function
-
 import logging
 import os
 import os.path
@@ -210,14 +205,14 @@ class GenerateExternalsDescriptionCfgV1(object):
         """
         # Create a file for a sparse pattern match
         sparse_filename = 'sparse_checkout'
-        with open(os.path.join(dest_dir, sparse_filename), 'w') as sfile:
+        with open(os.path.join(dest_dir, sparse_filename), 'w', encoding="utf-8") as sfile:
             sfile.write('readme.txt')
 
         self.create_config()
         self.create_section(SIMPLE_REPO_NAME, 'simp_tag',
                             tag='tag2')
 
-        sparse_relpath = '../../{}'.format(sparse_filename)
+        sparse_relpath = f'../../{sparse_filename}'
         self.create_section(SIMPLE_REPO_NAME, 'simp_sparse',
                             tag='tag2', sparse=sparse_relpath)
 
@@ -259,7 +254,7 @@ class GenerateExternalsDescriptionCfgV1(object):
 
         """
         dest_path = os.path.join(dest_dir, filename)
-        with open(dest_path, 'w') as configfile:
+        with open(dest_path, 'w', encoding="utf-8") as configfile:
             self._config.write(configfile)
 
     def create_config(self):
@@ -303,7 +298,7 @@ class GenerateExternalsDescriptionCfgV1(object):
                 ((repo_path is not None) or tag or ref_hash or branch)):
             printlog('create_section: "from_submodule" is incompatible with '
                      '"repo_url", "tag", "hash", and "branch" options;\n'
-                     'Ignoring those options for {}'.format(name))
+                     f'Ignoring those options for {name}')
             repo_url = None
             tag = ''
             ref_hash = ''
@@ -391,8 +386,8 @@ class GenerateExternalsDescriptionCfgV1(object):
         cmd = ['git', 'checkout', '-b', branch, ]
         execute_subprocess(cmd)
         if with_commit:
-            msg = 'start work on {0}'.format(branch)
-            with open(README_NAME, 'a') as handle:
+            msg = f'start work on {branch}'
+            with open(README_NAME, 'a', encoding="utf-8") as handle:
                 handle.write(msg)
             cmd = ['git', 'add', README_NAME, ]
             execute_subprocess(cmd)
@@ -417,7 +412,7 @@ class GenerateExternalsDescriptionCfgV1(object):
             execute_subprocess(cmd)
 
         msg = 'work on great new feature!'
-        with open(README_NAME, 'a') as handle:
+        with open(README_NAME, 'a', encoding="utf-8") as handle:
             handle.write(msg)
         cmd = ['git', 'add', README_NAME, ]
         execute_subprocess(cmd)
@@ -602,7 +597,7 @@ class BaseTestSysCheckout(unittest.TestCase):
         """
         # unique repo for this test
         test_dir_name = self._test_id
-        print("Test repository name: {0}".format(test_dir_name))
+        print(f"Test repository name: {test_dir_name}")
 
         parent_repo_dir = os.path.join(self._bare_root, parent_repo_name)
         if dest_dir_in is None:
@@ -622,7 +617,7 @@ class BaseTestSysCheckout(unittest.TestCase):
         """
         cwd = os.getcwd()
         os.chdir(under_test_dir)
-        with open(filename, 'w') as tmp:
+        with open(filename, 'w', encoding="utf-8") as tmp:
             tmp.write('Hello, world!')
 
         if tracked:
@@ -652,11 +647,9 @@ class BaseTestSysCheckout(unittest.TestCase):
         os.chdir(under_test_dir)
         cmdline = ['--externals', CFG_NAME, ]
         cmdline += args
-        repo_root = 'MANIC_TEST_BARE_REPO_ROOT={root}'.format(
-            root=os.environ[MANIC_TEST_BARE_REPO_ROOT])
-        manual_cmd = ('Test cmd:\npushd {cwd}; {env} {checkout} {args}'.format(
-            cwd=under_test_dir, env=repo_root, checkout=checkout_path,
-            args=' '.join(cmdline)))
+        repo_root = f'MANIC_TEST_BARE_REPO_ROOT={os.environ[MANIC_TEST_BARE_REPO_ROOT]}'
+        args = ' '.join(cmdline)
+        manual_cmd = f'Test cmd:\npushd {under_test_dir}; {repo_root} {checkout_path} {args}'
         printlog(manual_cmd)
         options = checkout.commandline_arguments(cmdline)
         overall_status, tree_status = checkout.main(options)
@@ -704,97 +697,97 @@ class BaseTestSysCheckout(unittest.TestCase):
     #
     # ----------------------------------------------------------------
     def _check_simple_tag_empty(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_tag'.format(directory)
+        name = f'./{directory}/simp_tag'
         self._check_generic_empty_default_required(tree, name)
 
     def _check_nested_tag_empty(self, tree, name=EXTERNALS_NAME):
         self._check_generic_empty_default_required(tree, name)
 
     def _check_simple_tag_ok(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_tag'.format(directory)
+        name = f'./{directory}/simp_tag'
         self._check_generic_ok_clean_required(tree, name)
 
     def _check_nested_tag_ok(self, tree, name=EXTERNALS_NAME):
         self._check_generic_ok_clean_required(tree, name)
 
     def _check_simple_tag_dirty(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_tag'.format(directory)
+        name = f'./{directory}/simp_tag'
         self._check_generic_ok_dirty_required(tree, name)
 
     def _check_simple_tag_modified(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_tag'.format(directory)
+        name = f'./{directory}/simp_tag'
         self._check_generic_modified_ok_required(tree, name)
 
     def _check_simple_branch_empty(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_branch'.format(directory)
+        name = f'./{directory}/simp_branch'
         self._check_generic_empty_default_required(tree, name)
 
     def _check_nested_branch_empty(self, tree, name=EXTERNALS_NAME):
         self._check_generic_empty_default_required(tree, name)
 
     def _check_simple_branch_ok(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_branch'.format(directory)
+        name = f'./{directory}/simp_branch'
         self._check_generic_ok_clean_required(tree, name)
 
     def _check_nested_branch_ok(self, tree, name=EXTERNALS_NAME):
         self._check_generic_ok_clean_required(tree, name)
 
     def _check_simple_branch_modified(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_branch'.format(directory)
+        name = f'./{directory}/simp_branch'
         self._check_generic_modified_ok_required(tree, name)
 
     def _check_simple_hash_empty(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_hash'.format(directory)
+        name = f'./{directory}/simp_hash'
         self._check_generic_empty_default_required(tree, name)
 
     def _check_nested_hash_empty(self, tree, name=EXTERNALS_NAME):
         self._check_generic_empty_default_required(tree, name)
 
     def _check_simple_hash_ok(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_hash'.format(directory)
+        name = f'./{directory}/simp_hash'
         self._check_generic_ok_clean_required(tree, name)
 
     def _check_nested_hash_ok(self, tree, name=EXTERNALS_NAME):
         self._check_generic_ok_clean_required(tree, name)
 
     def _check_simple_hash_modified(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_hash'.format(directory)
+        name = f'./{directory}/simp_hash'
         self._check_generic_modified_ok_required(tree, name)
 
     def _check_simple_req_empty(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_req'.format(directory)
+        name = f'./{directory}/simp_req'
         self._check_generic_empty_default_required(tree, name)
 
     def _check_simple_req_ok(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_req'.format(directory)
+        name = f'./{directory}/simp_req'
         self._check_generic_ok_clean_required(tree, name)
 
     def _check_simple_opt_empty(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_opt'.format(directory)
+        name = f'./{directory}/simp_opt'
         self._check_generic_empty_default_optional(tree, name)
 
     def _check_simple_opt_ok(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_opt'.format(directory)
+        name = f'./{directory}/simp_opt'
         self._check_generic_ok_clean_optional(tree, name)
 
     def _check_mixed_ext_branch_empty(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/mixed_req'.format(directory)
+        name = f'./{directory}/mixed_req'
         self._check_generic_empty_default_required(tree, name)
 
     def _check_mixed_ext_branch_ok(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/mixed_req'.format(directory)
+        name = f'./{directory}/mixed_req'
         self._check_generic_ok_clean_required(tree, name)
 
     def _check_mixed_ext_branch_modified(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/mixed_req'.format(directory)
+        name = f'./{directory}/mixed_req'
         self._check_generic_modified_ok_required(tree, name)
 
     def _check_simple_sparse_empty(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_sparse'.format(directory)
+        name = f'./{directory}/simp_sparse'
         self._check_generic_empty_default_required(tree, name)
 
     def _check_simple_sparse_ok(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/simp_sparse'.format(directory)
+        name = f'./{directory}/simp_sparse'
         self._check_generic_ok_clean_required(tree, name)
 
     # ----------------------------------------------------------------
@@ -936,8 +929,7 @@ class BaseTestSysCheckout(unittest.TestCase):
         # Note, this is the internal tree status just before checkout
         self.assertEqual(overall, 0)
         self._check_mixed_ext_branch_ok(tree, directory=EXTERNALS_NAME)
-        check_dir = "{0}/{1}/{2}".format(EXTERNALS_NAME, "mixed_req",
-                                         SUB_EXTERNALS_PATH)
+        check_dir = f"{EXTERNALS_NAME}/mixed_req/{SUB_EXTERNALS_PATH}"
         self._check_simple_branch_ok(tree, directory=check_dir)
 
     def _check_mixed_ext_branch_required_pre_checkout_ext_change(
@@ -946,8 +938,7 @@ class BaseTestSysCheckout(unittest.TestCase):
         # externals description file, but before checkout
         self.assertEqual(overall, 0)
         self._check_mixed_ext_branch_modified(tree, directory=EXTERNALS_NAME)
-        check_dir = "{0}/{1}/{2}".format(EXTERNALS_NAME, "mixed_req",
-                                         SUB_EXTERNALS_PATH)
+        check_dir = f"{EXTERNALS_NAME}/mixed_req/{SUB_EXTERNALS_PATH}"
         self._check_simple_branch_ok(tree, directory=check_dir)
 
     def _check_mixed_ext_branch_required_post_checkout_subext_modified(
@@ -956,8 +947,7 @@ class BaseTestSysCheckout(unittest.TestCase):
         # externals description file, but before checkout
         self.assertEqual(overall, 0)
         self._check_mixed_ext_branch_ok(tree, directory=EXTERNALS_NAME)
-        check_dir = "{0}/{1}/{2}".format(EXTERNALS_NAME, "mixed_req",
-                                         SUB_EXTERNALS_PATH)
+        check_dir = f"{EXTERNALS_NAME}/mixed_req/{SUB_EXTERNALS_PATH}"
         self._check_simple_branch_modified(tree, directory=check_dir)
 
     def _check_mixed_cont_simple_required_pre_checkout(self, overall, tree):
@@ -1565,19 +1555,19 @@ class TestSysCheckoutSVN(BaseTestSysCheckout):
     """
 
     def _check_svn_branch_ok(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/svn_branch'.format(directory)
+        name = f'./{directory}/svn_branch'
         self._check_generic_ok_clean_required(tree, name)
 
     def _check_svn_branch_dirty(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/svn_branch'.format(directory)
+        name = f'./{directory}/svn_branch'
         self._check_generic_ok_dirty_required(tree, name)
 
     def _check_svn_tag_ok(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/svn_tag'.format(directory)
+        name = f'./{directory}/svn_tag'
         self._check_generic_ok_clean_required(tree, name)
 
     def _check_svn_tag_modified(self, tree, directory=EXTERNALS_NAME):
-        name = './{0}/svn_tag'.format(directory)
+        name = f'./{directory}/svn_tag'
         self._check_generic_modified_ok_required(tree, name)
 
     def _check_container_simple_svn_post_checkout(self, overall, tree):

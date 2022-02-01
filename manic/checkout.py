@@ -24,11 +24,14 @@ from manic.utils import printlog, fatal_error
 from manic.global_constants import VERSION_SEPERATOR, LOG_FILE_NAME
 
 if sys.hexversion < 0x02070000:
-    print(70 * '*')
-    print('ERROR: {0} requires python >= 2.7.x. '.format(sys.argv[0]))
-    print('It appears that you are running python {0}'.format(
-        VERSION_SEPERATOR.join(str(x) for x in sys.version_info[0:3])))
-    print(70 * '*')
+    print(70 * "*")
+    print(f"ERROR: {0} requires python >= 2.7.x. ".format(sys.argv[0]))
+    print(
+        f"It appears that you are running python {0}".format(
+            VERSION_SEPERATOR.join(str(x) for x in sys.version_info[0:3])
+        )
+    )
+    print(70 * "*")
     sys.exit(1)
 
 
@@ -45,7 +48,7 @@ def commandline_arguments(args=None):
 
     Returns: processed command line arguments
     """
-    description = '''
+    description = """
 
 %(prog)s manages checking out groups of externals from revision
 control based on an externals description file. By default only the
@@ -53,9 +56,9 @@ required externals are checkout out.
 
 Running %(prog)s without the '--status' option will always attempt to
 synchronize the working copy to exactly match the externals description.
-'''
+"""
 
-    epilog = '''
+    epilog = """
 ```
 NOTE: %(prog)s *MUST* be run from the root of the source tree it
 is managing. For example, if you cloned a repository with:
@@ -261,70 +264,114 @@ If %(prog)s is not doing what you expected, double check the contents
 of the externals description file or examine the output of
 ./manage_externals/%(prog)s --status
 
-'''
+"""
 
     parser = argparse.ArgumentParser(
-        description=description, epilog=epilog,
-        formatter_class=argparse.RawDescriptionHelpFormatter)
+        description=description,
+        epilog=epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
 
     #
     # user options
     #
-    parser.add_argument("components", nargs="*",
-                        help="Specific component(s) to checkout. By default, "
-                        "all required externals are checked out.")
+    parser.add_argument(
+        "components",
+        nargs="*",
+        help="Specific component(s) to checkout. By default, "
+        "all required externals are checked out.",
+    )
 
-    parser.add_argument('-e', '--externals', nargs='?',
-                        default='Externals.cfg',
-                        help='The externals description filename. '
-                        'Default: %(default)s.')
+    parser.add_argument(
+        "-e",
+        "--externals",
+        nargs="?",
+        default="Externals.cfg",
+        help="The externals description filename. " "Default: %(default)s.",
+    )
 
-    parser.add_argument('-x', '--exclude', nargs='*',
-                        help='Component(s) listed in the externals file which should be ignored.')
+    parser.add_argument(
+        "-x",
+        "--exclude",
+        nargs="*",
+        help="Component(s) listed in the externals file which should be ignored.",
+    )
 
-    parser.add_argument('-o', '--optional', action='store_true', default=False,
-                        help='By default only the required externals '
-                        'are checked out. This flag will also checkout the '
-                        'optional externals.')
+    parser.add_argument(
+        "-o",
+        "--optional",
+        action="store_true",
+        default=False,
+        help="By default only the required externals "
+        "are checked out. This flag will also checkout the "
+        "optional externals.",
+    )
 
-    parser.add_argument('-S', '--status', action='store_true', default=False,
-                        help='Output the status of the repositories managed by '
-                        '%(prog)s. By default only summary information '
-                        'is provided. Use the verbose option to see details.')
+    parser.add_argument(
+        "-S",
+        "--status",
+        action="store_true",
+        default=False,
+        help="Output the status of the repositories managed by "
+        "%(prog)s. By default only summary information "
+        "is provided. Use the verbose option to see details.",
+    )
 
-    parser.add_argument('-v', '--verbose', action='count', default=0,
-                        help='Output additional information to '
-                        'the screen and log file. This flag can be '
-                        'used up to two times, increasing the '
-                        'verbosity level each time.')
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Output additional information to "
+        "the screen and log file. This flag can be "
+        "used up to two times, increasing the "
+        "verbosity level each time.",
+    )
 
-    parser.add_argument('--svn-ignore-ancestry', action='store_true', default=False,
-                        help='By default, subversion will abort if a component is '
-                        'already checked out and there is no common ancestry with '
-                        'the new URL. This flag passes the "--ignore-ancestry" flag '
-                        'to the svn switch call. (This is not recommended unless '
-                        'you are sure about what you are doing.)')
+    parser.add_argument(
+        "--svn-ignore-ancestry",
+        action="store_true",
+        default=False,
+        help="By default, subversion will abort if a component is "
+        "already checked out and there is no common ancestry with "
+        'the new URL. This flag passes the "--ignore-ancestry" flag '
+        "to the svn switch call. (This is not recommended unless "
+        "you are sure about what you are doing.)",
+    )
 
     #
     # developer options
     #
-    parser.add_argument('--backtrace', action='store_true',
-                        help='DEVELOPER: show exception backtraces as extra '
-                        'debugging output')
+    parser.add_argument(
+        "--backtrace",
+        action="store_true",
+        help="DEVELOPER: show exception backtraces as extra " "debugging output",
+    )
 
-    parser.add_argument('-d', '--debug', action='store_true', default=False,
-                        help='DEVELOPER: output additional debugging '
-                        'information to the screen and log file.')
+    parser.add_argument(
+        "-d",
+        "--debug",
+        action="store_true",
+        default=False,
+        help="DEVELOPER: output additional debugging "
+        "information to the screen and log file.",
+    )
 
     logging_group = parser.add_mutually_exclusive_group()
 
-    logging_group.add_argument('--logging', dest='do_logging',
-                               action='store_true',
-                               help='DEVELOPER: enable logging.')
-    logging_group.add_argument('--no-logging', dest='do_logging',
-                               action='store_false', default=False,
-                               help='DEVELOPER: disable logging '
-                               '(this is the default)')
+    logging_group.add_argument(
+        "--logging",
+        dest="do_logging",
+        action="store_true",
+        help="DEVELOPER: enable logging.",
+    )
+    logging_group.add_argument(
+        "--no-logging",
+        dest="do_logging",
+        action="store_false",
+        default=False,
+        help="DEVELOPER: disable logging " "(this is the default)",
+    )
 
     if args:
         options = parser.parse_args(args)
@@ -350,13 +397,15 @@ def main(args):
     used to determine if it's safe to proceed with the checkout.
     """
     if args.do_logging:
-        logging.basicConfig(filename=LOG_FILE_NAME,
-                            format='%(levelname)s : %(asctime)s : %(message)s',
-                            datefmt='%Y-%m-%d %H:%M:%S',
-                            level=logging.DEBUG)
+        logging.basicConfig(
+            filename=LOG_FILE_NAME,
+            format="%(levelname)s : %(asctime)s : %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            level=logging.DEBUG,
+        )
 
     program_name = os.path.basename(sys.argv[0])
-    logging.info('Beginning of %s', program_name)
+    logging.info("Beginning of %s", program_name)
 
     load_all = False
     if args.optional:
@@ -365,18 +414,19 @@ def main(args):
     root_dir = os.path.abspath(os.getcwd())
     external_data = read_externals_description_file(root_dir, args.externals)
     external = create_externals_description(
-        external_data, components=args.components, exclude=args.exclude)
+        external_data, components=args.components, exclude=args.exclude
+    )
 
     for comp in args.components:
         if comp not in external.keys():
-            fatal_error(
-                "No component {} found in {}".format(
-                    comp, args.externals))
+            fatal_error(f"No component {comp} found in {args.externals}")
 
-    source_tree = SourceTree(root_dir, external, svn_ignore_ancestry=args.svn_ignore_ancestry)
-    printlog('Checking status of externals: ', end='')
+    source_tree = SourceTree(
+        root_dir, external, svn_ignore_ancestry=args.svn_ignore_ancestry
+    )
+    printlog("Checking status of externals: ", end="")
     tree_status = source_tree.status()
-    printlog('')
+    printlog("")
 
     if args.status:
         # user requested status-only
@@ -423,18 +473,20 @@ control using the expected protocol. If you are sure you want to switch
 protocols, and you don't have any work you need to save from this
 directory, then run "rm -rf [directory]" before rerunning the
 {program_name} tool.
-""".format(program_name=program_name, config_file=args.externals)
+""".format(
+                program_name=program_name, config_file=args.externals
+            )
 
-            printlog('-' * 70)
+            printlog("-" * 70)
             printlog(msg)
-            printlog('-' * 70)
+            printlog("-" * 70)
         else:
             if not args.components:
                 source_tree.checkout(args.verbose, load_all)
             for comp in args.components:
                 source_tree.checkout(args.verbose, load_all, load_comp=comp)
-            printlog('')
+            printlog("")
 
-    logging.info('%s completed without exceptions.', program_name)
+    logging.info("%s completed without exceptions.", program_name)
     # NOTE(bja, 2017-11) tree status is used by the systems tests
     return 0, tree_status

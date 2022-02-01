@@ -35,7 +35,8 @@ class SvnRepository(Repository):
     by mocking the specific calls to return predefined results.
 
     """
-    RE_URLLINE = re.compile(r'^URL:')
+
+    RE_URLLINE = re.compile(r"^URL:")
 
     def __init__(self, component_name, repo, ignore_ancestry=False):
         """
@@ -56,7 +57,9 @@ class SvnRepository(Repository):
     # Public API, defined by Repository
     #
     # ----------------------------------------------------------------
-    def checkout(self, base_dir_path, repo_dir_name, verbosity, recursive):  # pylint: disable=unused-argument
+    def checkout(
+        self, base_dir_path, repo_dir_name, verbosity, recursive
+    ):  # pylint: disable=unused-argument
         """Checkout or update the working copy
 
         If the repo destination directory exists, switch the sandbox to
@@ -76,8 +79,7 @@ class SvnRepository(Repository):
             # svn switch can lead to a conflict state, but it gives a
             # return code of 0. So now we need to make sure that we're
             # in a clean (non-conflict) state.
-            self._abort_if_dirty(repo_dir_path,
-                                 "Expected clean state following switch")
+            self._abort_if_dirty(repo_dir_path, "Expected clean state following switch")
             os.chdir(cwd)
         else:
             self._svn_checkout(self._url, repo_dir_path, verbosity)
@@ -111,9 +113,10 @@ class SvnRepository(Repository):
                 # directory removed or incomplete checkout?
                 stat.sync_state = ExternalStatus.UNKNOWN
             else:
-                stat.sync_state, stat.current_version = \
-                    self._check_url(svn_output, self._url)
-            stat.expected_version = '/'.join(self._url.split('/')[3:])
+                stat.sync_state, stat.current_version = self._check_url(
+                    svn_output, self._url
+                )
+            stat.expected_version = "/".join(self._url.split("/")[3:])
 
     def _abort_if_dirty(self, repo_dir_path, message):
         """Check if the repo is in a dirty state; if so, abort with a
@@ -126,8 +129,8 @@ class SvnRepository(Repository):
         if stat.clean_state != ExternalStatus.STATUS_OK:
             status = self._svn_status_verbose(repo_dir_path)
             status = indent_string(status, 4)
-            errmsg = """In directory
-    {cwd}
+            errmsg = f"""In directory
+    {repo_dir_path}
 
 svn status now shows:
 {status}
@@ -140,8 +143,7 @@ in the new revision.
 
 To recover: Clean up the above directory (resolving conflicts, etc.),
 then rerun checkout_externals.
-""".format(cwd=repo_dir_path, message=message, status=status)
-
+"""
             fatal_error(errmsg)
 
     @staticmethod
@@ -153,7 +155,7 @@ then rerun checkout_externals.
         url = None
         for line in svn_output.splitlines():
             if SvnRepository.RE_URLLINE.match(line):
-                url = line.split(': ')[1].strip()
+                url = line.split(": ")[1].strip()
                 break
         if not url:
             status = ExternalStatus.UNKNOWN
@@ -163,7 +165,7 @@ then rerun checkout_externals.
             status = ExternalStatus.MODEL_MODIFIED
 
         if url:
-            current_version = '/'.join(url.split('/')[3:])
+            current_version = "/".join(url.split("/")[3:])
         else:
             current_version = EMPTY_STR
 
@@ -201,21 +203,20 @@ then rerun checkout_externals.
 
         """
         # pylint: disable=invalid-name
-        SVN_EXTERNAL = 'external'
-        SVN_UNVERSIONED = 'unversioned'
+        SVN_EXTERNAL = "external"
+        SVN_UNVERSIONED = "unversioned"
         # pylint: enable=invalid-name
 
         is_dirty = False
         try:
             xml_status = ET.fromstring(svn_output)
         except BaseException:
-            fatal_error(
-                "SVN returned invalid XML message {}".format(svn_output))
-        xml_target = xml_status.find('./target')
-        entries = xml_target.findall('./entry')
+            fatal_error(f"SVN returned invalid XML message {svn_output}")
+        xml_target = xml_status.find("./target")
+        entries = xml_target.findall("./entry")
         for entry in entries:
-            status = entry.find('./wc-status')
-            item = status.get('item')
+            status = entry.find("./wc-status")
+            item = status.get("item")
             if item == SVN_EXTERNAL:
                 continue
             if item == SVN_UNVERSIONED:
@@ -231,17 +232,15 @@ then rerun checkout_externals.
     # ----------------------------------------------------------------
     @staticmethod
     def _svn_info(repo_dir_path):
-        """Return results of svn info command
-        """
-        cmd = ['svn', 'info', repo_dir_path]
+        """Return results of svn info command"""
+        cmd = ["svn", "info", repo_dir_path]
         output = execute_subprocess(cmd, output_to_caller=True)
         return output
 
     @staticmethod
     def _svn_status_verbose(repo_dir_path):
-        """capture the full svn status output
-        """
-        cmd = ['svn', 'status', repo_dir_path]
+        """capture the full svn status output"""
+        cmd = ["svn", "status", repo_dir_path]
         svn_output = execute_subprocess(cmd, output_to_caller=True)
         return svn_output
 
@@ -250,7 +249,7 @@ then rerun checkout_externals.
         """
         Get status of the subversion sandbox in repo_dir
         """
-        cmd = ['svn', 'status', '--xml', repo_dir_path]
+        cmd = ["svn", "status", "--xml", repo_dir_path]
         svn_output = execute_subprocess(cmd, output_to_caller=True)
         return svn_output
 
@@ -264,9 +263,10 @@ then rerun checkout_externals.
         """
         Checkout a subversion repository (repo_url) to checkout_dir.
         """
-        cmd = ['svn', 'checkout', '--quiet', url, repo_dir_path]
+        cmd = ["svn", "checkout", "--quiet", url, repo_dir_path]
         if verbosity >= VERBOSITY_VERBOSE:
-            printlog('    {0}'.format(' '.join(cmd)))
+            msg = " ".join(cmd)
+            printlog(f"    {msg}")
         execute_subprocess(cmd)
 
     @staticmethod
@@ -274,10 +274,11 @@ then rerun checkout_externals.
         """
         Switch branches for in an svn sandbox
         """
-        cmd = ['svn', 'switch', '--quiet']
+        cmd = ["svn", "switch", "--quiet"]
         if ignore_ancestry:
-            cmd.append('--ignore-ancestry')
+            cmd.append("--ignore-ancestry")
         cmd.append(url)
         if verbosity >= VERBOSITY_VERBOSE:
-            printlog('    {0}'.format(' '.join(cmd)))
+            msg = " ".join(cmd)
+            printlog(f"    {msg}")
         execute_subprocess(cmd)

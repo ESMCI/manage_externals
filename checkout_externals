@@ -17,8 +17,8 @@ import manic
 
 if sys.hexversion < 0x02070000:
     print(70 * '*')
-    print('ERROR: {0} requires python >= 2.7.x. '.format(sys.argv[0]))
-    print('It appears that you are running python {0}'.format(
+    print(f'ERROR: {0} requires python >= 2.7.x. '.format(sys.argv[0]))
+    print(f'It appears that you are running python {0}'.format(
         '.'.join(str(x) for x in sys.version_info[0:3])))
     print(70 * '*')
     sys.exit(1)

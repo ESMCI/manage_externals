@@ -29,19 +29,20 @@ class ExternalStatus(object):
     transactions (e.g. add, remove, rename, untracked files).
 
     """
-    DEFAULT = '-'
-    UNKNOWN = '?'
-    EMPTY = 'e'
-    MODEL_MODIFIED = 's'  # a.k.a. out-of-sync
-    DIRTY = 'M'
 
-    STATUS_OK = ' '
-    STATUS_ERROR = '!'
+    DEFAULT = "-"
+    UNKNOWN = "?"
+    EMPTY = "e"
+    MODEL_MODIFIED = "s"  # a.k.a. out-of-sync
+    DIRTY = "M"
+
+    STATUS_OK = " "
+    STATUS_ERROR = "!"
 
     # source types
-    OPTIONAL = 'o'
-    STANDALONE = 's'
-    MANAGED = ' '
+    OPTIONAL = "o"
+    STANDALONE = "s"
+    MANAGED = " "
 
     def __init__(self):
         self.sync_state = self.DEFAULT
@@ -53,8 +54,7 @@ class ExternalStatus(object):
         self.status_output = EMPTY_STR
 
     def log_status_message(self, verbosity):
-        """Write status message to the screen and log file
-        """
+        """Write status message to the screen and log file"""
         self._default_status_message()
         if verbosity >= VERBOSITY_VERBOSE:
             self._verbose_status_message()
@@ -62,32 +62,26 @@ class ExternalStatus(object):
             self._dump_status_message()
 
     def _default_status_message(self):
-        """Return the default terse status message string
-        """
-        msg = '{sync}{clean}{src_type} {path}'.format(
-            sync=self.sync_state, clean=self.clean_state,
-            src_type=self.source_type, path=self.path)
+        """Return the default terse status message string"""
+        msg = f"{self.sync_state}{self.clean_state}{self.source_type} {self.path}"
         printlog(msg)
 
     def _verbose_status_message(self):
-        """Return the verbose status message string
-        """
+        """Return the verbose status message string"""
         clean_str = self.DEFAULT
         if self.clean_state == self.STATUS_OK:
-            clean_str = 'clean sandbox'
+            clean_str = "clean sandbox"
         elif self.clean_state == self.DIRTY:
-            clean_str = 'modified sandbox'
+            clean_str = "modified sandbox"
 
-        sync_str = 'on {0}'.format(self.current_version)
+        sync_str = f"on {0}".format(self.current_version)
         if self.sync_state != self.STATUS_OK:
-            sync_str = '{current} --> {expected}'.format(
-                current=self.current_version, expected=self.expected_version)
-        msg = '        {clean}, {sync}'.format(clean=clean_str, sync=sync_str)
+            sync_str = f"{self.current_version} --> {self.expected_version}"
+        msg = f"        {clean_str}, {sync_str}"
         printlog(msg)
 
     def _dump_status_message(self):
-        """Return the dump status message string
-        """
+        """Return the dump status message string"""
         msg = indent_string(self.status_output, 12)
         printlog(msg)
 
@@ -109,8 +103,10 @@ class ExternalStatus(object):
             # sync_state. Any other sync_state at this point
             # represents a logic error that should have been handled
             # before now!
-            sync_safe = ((self.sync_state == ExternalStatus.STATUS_OK) or
-                         (self.sync_state == ExternalStatus.MODEL_MODIFIED))
+            sync_safe = self.sync_state in (
+                ExternalStatus.STATUS_OK,
+                ExternalStatus.MODEL_MODIFIED,
+            )
             if sync_safe:
                 # The clean_state must be STATUS_OK to update. Otherwise we
                 # are dirty or there was a missed error previously.
@@ -134,10 +130,12 @@ class ExternalStatus(object):
         testing is needed.
 
         """
-        is_empty = (self.sync_state == ExternalStatus.EMPTY)
-        clean_valid = ((self.clean_state == ExternalStatus.DEFAULT) or
-                       (self.clean_state == ExternalStatus.EMPTY) or
-                       (self.clean_state == ExternalStatus.UNKNOWN))
+        is_empty = self.sync_state == ExternalStatus.EMPTY
+        clean_valid = self.clean_state in (
+            ExternalStatus.DEFAULT,
+            ExternalStatus.EMPTY,
+            ExternalStatus.UNKNOWN,
+        )
 
         if is_empty and clean_valid:
             exists = False

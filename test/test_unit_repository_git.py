@@ -8,10 +8,6 @@ already in the python path.
 """
 # pylint: disable=too-many-lines,protected-access
 
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from __future__ import print_function
-
 import os
 import shutil
 import unittest
@@ -25,12 +21,12 @@ from manic.global_constants import EMPTY_STR
 # NOTE(bja, 2017-11) order is important here. origin should be a
 # subset of other to trap errors on processing remotes!
 GIT_REMOTE_OUTPUT_ORIGIN_UPSTREAM = '''
-upstream	/path/to/other/repo (fetch)
-upstream	/path/to/other/repo (push)
-other	/path/to/local/repo2 (fetch)
-other	/path/to/local/repo2 (push)
-origin	/path/to/local/repo (fetch)
-origin	/path/to/local/repo (push)
+upstream        /path/to/other/repo (fetch)
+upstream        /path/to/other/repo (push)
+other   /path/to/local/repo2 (fetch)
+other   /path/to/local/repo2 (push)
+origin  /path/to/local/repo (fetch)
+origin  /path/to/local/repo (push)
 '''
 
 

@@ -301,7 +301,7 @@ class TestReadExternalsDescription(unittest.TestCase):
 <source_tree version='1.0.0'>
 invalid file format
 </sourc_tree>"""
-        with open(file_path, 'w') as fhandle:
+        with open(file_path, 'w', encoding="utf-8") as fhandle:
             fhandle.write(contents)
         with self.assertRaises(RuntimeError):
             read_externals_description_file(root_dir, filename)

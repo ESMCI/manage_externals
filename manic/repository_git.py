@@ -59,12 +59,12 @@ class GitRepository(Repository):
         """
         repo_dir_path = os.path.join(base_dir_path, repo_dir_name)
         repo_dir_exists = os.path.exists(repo_dir_path)
-        if (repo_dir_exists and not os.listdir(
-                repo_dir_path)) or not repo_dir_exists:
+        if (repo_dir_exists and not os.listdir(repo_dir_path)) or not repo_dir_exists:
             self._clone_repo(base_dir_path, repo_dir_name, verbosity)
         self._checkout_ref(repo_dir_path, verbosity, recursive)
-        gmpath = os.path.join(repo_dir_path,
-                              ExternalsDescription.GIT_SUBMODULES_FILENAME)
+        gmpath = os.path.join(
+            repo_dir_path, ExternalsDescription.GIT_SUBMODULES_FILENAME
+        )
         if os.path.exists(gmpath):
             self._gitmodules = gmpath
             self._submods = git_submodule_status(repo_dir_path)
@@ -85,8 +85,9 @@ class GitRepository(Repository):
 
     def submodules_file(self, repo_path=None):
         if repo_path is not None:
-            gmpath = os.path.join(repo_path,
-                                  ExternalsDescription.GIT_SUBMODULES_FILENAME)
+            gmpath = os.path.join(
+                repo_path, ExternalsDescription.GIT_SUBMODULES_FILENAME
+            )
             if os.path.exists(gmpath):
                 self._gitmodules = gmpath
                 self._submods = git_submodule_status(repo_path)
@@ -99,8 +100,7 @@ class GitRepository(Repository):
     #
     # ----------------------------------------------------------------
     def _clone_repo(self, base_dir_path, repo_dir_name, verbosity):
-        """Prepare to execute the clone by managing directory location
-        """
+        """Prepare to execute the clone by managing directory location"""
         cwd = os.getcwd()
         os.chdir(base_dir_path)
         self._git_clone(self._url, repo_dir_name, verbosity)
@@ -135,11 +135,11 @@ class GitRepository(Repository):
             # If we're on a branch, include branch name in current ref
             branch_found, branch_name = self._git_current_branch()
             if branch_found:
-                current_ref = "{} (branch {})".format(current_ref, branch_name)
+                current_ref = f"{current_ref} (branch {branch_name})"
         else:
             # If we still can't find a ref, return empty string. This
             # can happen if we're not actually in a git repo
-            current_ref = ''
+            current_ref = ""
 
         return current_ref
 
@@ -156,7 +156,7 @@ class GitRepository(Repository):
             # by _Source() object and should never be here!
             stat.sync_state = ExternalStatus.STATUS_ERROR
         else:
-            git_dir = os.path.join(repo_dir_path, '.git')
+            git_dir = os.path.join(repo_dir_path, ".git")
             if not os.path.exists(git_dir):
                 # NOTE(bja, 2017-10) directory exists, but no git repo
                 # info.... Can't test with subprocess git command
@@ -174,10 +174,9 @@ class GitRepository(Repository):
         expected ref in the input status object.
 
         """
-        def compare_refs(current_ref, expected_ref):
-            """Compare the current and expected ref.
 
-            """
+        def compare_refs(current_ref, expected_ref):
+            """Compare the current and expected ref."""
             if current_ref == expected_ref:
                 status = ExternalStatus.STATUS_OK
             else:
@@ -198,16 +197,15 @@ class GitRepository(Repository):
                 if not remote_name:
                     # git doesn't know about this remote. by definition
                     # this is a modified state.
-                    expected_ref = "unknown_remote/{0}".format(self._branch)
+                    expected_ref = f"unknown_remote/{self._branch}"
                 else:
-                    expected_ref = "{0}/{1}".format(remote_name, self._branch)
+                    expected_ref = f"{remote_name}/{self._branch}"
         elif self._hash:
             expected_ref = self._hash
         elif self._tag:
             expected_ref = self._tag
         else:
-            msg = 'In repo "{0}": none of branch, hash or tag are set'.format(
-                self._name)
+            msg = f'In repo "{self._name}": none of branch, hash or tag are set'
             fatal_error(msg)
 
         # record the *names* of the current and expected branches
@@ -218,8 +216,7 @@ class GitRepository(Repository):
             stat.sync_state = ExternalStatus.UNKNOWN
         else:
             # get the underlying hash of the expected ref
-            revparse_status, expected_ref_hash = self._git_revparse_commit(
-                expected_ref)
+            revparse_status, expected_ref_hash = self._git_revparse_commit(expected_ref)
             if revparse_status:
                 # We failed to get the hash associated with
                 # expected_ref. Maybe we should assign this to some special
@@ -241,7 +238,7 @@ class GitRepository(Repository):
         """
         git_output = self._git_remote_verbose()
         git_output = git_output.splitlines()
-        remote_name = ''
+        remote_name = ""
         for line in git_output:
             data = line.strip()
             if not data:
@@ -290,16 +287,16 @@ class GitRepository(Repository):
             url = split_remote_url(url)
         else:
             url = expand_local_url(url, self._name)
-        url = url.split('/')
+        url = url.split("/")
         repo_name = url[-1]
         base_name = url[-2]
         # repo name should nominally already be something that git can
         # deal with. We need to remove other possibly troublesome
         # punctuation, e.g. /, $, from the base name.
-        unsafe_characters = '!@#$%^&*()[]{}\\/,;~'
+        unsafe_characters = "!@#$%^&*()[]{}\\/,;~"
         for unsafe in unsafe_characters:
-            base_name = base_name.replace(unsafe, '')
-        remote_name = "{0}_{1}".format(base_name, repo_name)
+            base_name = base_name.replace(unsafe, "")
+        remote_name = f"{base_name}_{repo_name}"
         return remote_name
 
     def _checkout_ref(self, repo_dir, verbosity, submodules):
@@ -318,7 +315,6 @@ class GitRepository(Repository):
         if self._sparse:
             self._sparse_checkout(repo_dir, verbosity)
         os.chdir(cwd)
-
 
     def _checkout_local_ref(self, verbosity, submodules):
         """Checkout the reference considering the local repo only. Do not
@@ -361,17 +357,17 @@ class GitRepository(Repository):
         self._check_for_valid_ref(ref, remote_name)
 
         if self._branch:
-            ref = '{0}/{1}'.format(remote_name, ref)
+            ref = f"{remote_name}/{ref}"
         self._git_checkout_ref(ref, verbosity, submodules)
 
     def _sparse_checkout(self, repo_dir, verbosity):
         """Use git read-tree to thin the working tree."""
         cwd = os.getcwd()
 
-        cmd = ['cp', self._sparse, os.path.join(repo_dir,
-                                                '.git/info/sparse-checkout')]
+        cmd = ["cp", self._sparse, os.path.join(repo_dir, ".git/info/sparse-checkout")]
         if verbosity >= VERBOSITY_VERBOSE:
-            printlog('    {0}'.format(' '.join(cmd)))
+            msg = " ".join(cmd)
+            printlog(f"    {msg}")
         execute_subprocess(cmd)
         os.chdir(repo_dir)
         self._git_sparse_checkout(verbosity)
@@ -390,17 +386,17 @@ class GitRepository(Repository):
 
         is_valid = is_tag or is_branch or is_hash
         if not is_valid:
-            msg = ('In repo "{0}": reference "{1}" does not appear to be a '
-                   'valid tag, branch or hash! Please verify the reference '
-                   'name (e.g. spelling), is available from: {2} '.format(
-                       self._name, ref, self._url))
+            msg = (
+                f'In repo "{self._name}": reference "{ref}" does not appear to be a '
+                "valid tag, branch or hash! Please verify the reference "
+                "name (e.g. spelling), is available from: {self._url} "
+            )
             fatal_error(msg)
 
         if is_tag:
             is_unique_tag, msg = self._is_unique_tag(ref, remote_name)
             if not is_unique_tag:
-                msg = ('In repo "{0}": tag "{1}" {2}'.format(
-                    self._name, self._tag, msg))
+                msg = f'In repo "{self._name}": tag "{self._tag}" {msg}'
                 fatal_error(msg)
 
         return is_valid
@@ -420,31 +416,37 @@ class GitRepository(Repository):
         is_branch = self._ref_is_branch(ref, remote_name)
         is_hash = self._ref_is_hash(ref)
 
-        msg = ''
+        msg = ""
         is_unique_tag = False
         if is_tag and not is_branch:
             # unique tag
-            msg = 'is ok'
+            msg = "is ok"
             is_unique_tag = True
         elif is_tag and is_branch:
-            msg = ('is both a branch and a tag. git may checkout the branch '
-                   'instead of the tag depending on your version of git.')
+            msg = (
+                "is both a branch and a tag. git may checkout the branch "
+                "instead of the tag depending on your version of git."
+            )
             is_unique_tag = False
         elif not is_tag and is_branch:
-            msg = ('is a branch, and not a tag. If you intended to checkout '
-                   'a branch, please change the externals description to be '
-                   'a branch. If you intended to checkout a tag, it does not '
-                   'exist. Please check the name.')
+            msg = (
+                "is a branch, and not a tag. If you intended to checkout "
+                "a branch, please change the externals description to be "
+                "a branch. If you intended to checkout a tag, it does not "
+                "exist. Please check the name."
+            )
             is_unique_tag = False
         else:  # not is_tag and not is_branch:
             if is_hash:
                 # probably a sha1 or HEAD, etc, we call it a tag
-                msg = 'is ok'
+                msg = "is ok"
                 is_unique_tag = True
             else:
                 # undetermined state.
-                msg = ('does not appear to be a valid tag, branch or hash! '
-                       'Please check the name and repository.')
+                msg = (
+                    "does not appear to be a valid tag, branch or hash! "
+                    "Please check the name and repository."
+                )
                 is_unique_tag = False
 
         return is_unique_tag, msg
@@ -551,9 +553,7 @@ class GitRepository(Repository):
         return is_hash
 
     def _status_summary(self, stat, repo_dir_path):
-        """Determine the clean/dirty status of a git repository
-
-        """
+        """Determine the clean/dirty status of a git repository"""
         cwd = os.getcwd()
         os.chdir(repo_dir_path)
         git_output = self._git_status_porcelain_v1z()
@@ -612,7 +612,7 @@ class GitRepository(Repository):
         status, git_output = GitRepository._git_revparse_commit("HEAD")
         hash_found = not status
         if not hash_found:
-            git_output = ''
+            git_output = ""
         return hash_found, git_output
 
     @staticmethod
@@ -623,15 +623,15 @@ class GitRepository(Repository):
         is a logical specifying whether a branch name was found for
         HEAD. (If branch_found is False, then branch_name is ''.)
         """
-        cmd = ['git', 'symbolic-ref', '--short', '-q', 'HEAD']
-        status, git_output = execute_subprocess(cmd,
-                                                output_to_caller=True,
-                                                status_to_caller=True)
+        cmd = ["git", "symbolic-ref", "--short", "-q", "HEAD"]
+        status, git_output = execute_subprocess(
+            cmd, output_to_caller=True, status_to_caller=True
+        )
         branch_found = not status
         if branch_found:
             git_output = git_output.strip()
         else:
-            git_output = ''
+            git_output = ""
         return branch_found, git_output
 
     @staticmethod
@@ -643,15 +643,15 @@ class GitRepository(Repository):
         HEAD. (If tag_found is False, then tag_name is ''.)
         """
         # git describe --exact-match --tags HEAD
-        cmd = ['git', 'describe', '--exact-match', '--tags', 'HEAD']
-        status, git_output = execute_subprocess(cmd,
-                                                output_to_caller=True,
-                                                status_to_caller=True)
+        cmd = ["git", "describe", "--exact-match", "--tags", "HEAD"]
+        status, git_output = execute_subprocess(
+            cmd, output_to_caller=True, status_to_caller=True
+        )
         tag_found = not status
         if tag_found:
             git_output = git_output.strip()
         else:
-            git_output = ''
+            git_output = ""
         return tag_found, git_output
 
     @staticmethod
@@ -660,8 +660,13 @@ class GitRepository(Repository):
 
         could also use git rev-parse --quiet --verify tagname^{tag}
         """
-        cmd = ['git', 'show-ref', '--quiet', '--verify',
-               'refs/tags/{0}'.format(ref), ]
+        cmd = [
+            "git",
+            "show-ref",
+            "--quiet",
+            "--verify",
+            f"refs/tags/{ref}",
+        ]
         status = execute_subprocess(cmd, status_to_caller=True)
         return status
 
@@ -671,8 +676,13 @@ class GitRepository(Repository):
         tracked remote branch.
 
         """
-        cmd = ['git', 'show-ref', '--quiet', '--verify',
-               'refs/heads/{0}'.format(ref), ]
+        cmd = [
+            "git",
+            "show-ref",
+            "--quiet",
+            "--verify",
+            f"refs/heads/{ref}",
+        ]
         status = execute_subprocess(cmd, status_to_caller=True)
         return status
 
@@ -682,8 +692,14 @@ class GitRepository(Repository):
         branch that is not being tracked
 
         """
-        cmd = ['git', 'ls-remote', '--exit-code', '--heads',
-               remote_name, ref, ]
+        cmd = [
+            "git",
+            "ls-remote",
+            "--exit-code",
+            "--heads",
+            remote_name,
+            ref,
+        ]
         status = execute_subprocess(cmd, status_to_caller=True)
         return status
 
@@ -693,10 +709,22 @@ class GitRepository(Repository):
         valid commit.
 
         """
-        cmd = ['git', 'rev-parse', '--quiet', '--verify',
-               '{0}^{1}'.format(ref, '{commit}'), ]
-        status, git_output = execute_subprocess(cmd, status_to_caller=True,
-                                                output_to_caller=True)
+        # jpe: could not figure out the f-string here
+        # pylint: disable=consider-using-f-string
+        cmd = [
+            "git",
+            "rev-parse",
+            "--quiet",
+            "--verify",
+            "{0}^{1}".format(ref, "{commit}"),
+        ]
+        status, git_output = execute_subprocess(
+            cmd, status_to_caller=True, output_to_caller=True
+        )
+
+        status, git_output = execute_subprocess(
+            cmd, status_to_caller=True, output_to_caller=True
+        )
         git_output = git_output.strip()
         return status, git_output
 
@@ -710,23 +738,21 @@ class GitRepository(Repository):
         between git versions or *user configuration*.
 
         """
-        cmd = ['git', 'status', '--untracked-files=no', '--porcelain', '-z']
+        cmd = ["git", "status", "--untracked-files=no", "--porcelain", "-z"]
         git_output = execute_subprocess(cmd, output_to_caller=True)
         return git_output
 
     @staticmethod
     def _git_status_verbose():
-        """Run the git status command to obtain repository information.
-        """
-        cmd = ['git', 'status']
+        """Run the git status command to obtain repository information."""
+        cmd = ["git", "status"]
         git_output = execute_subprocess(cmd, output_to_caller=True)
         return git_output
 
     @staticmethod
     def _git_remote_verbose():
-        """Run the git remote command to obtain repository information.
-        """
-        cmd = ['git', 'remote', '--verbose']
+        """Run the git remote command to obtain repository information."""
+        cmd = ["git", "remote", "--verbose"]
         git_output = execute_subprocess(cmd, output_to_caller=True)
         return git_output
 
@@ -738,8 +764,9 @@ class GitRepository(Repository):
         if repo_dir_path is None:
             fname = ExternalsDescription.GIT_SUBMODULES_FILENAME
         else:
-            fname = os.path.join(repo_dir_path,
-                                 ExternalsDescription.GIT_SUBMODULES_FILENAME)
+            fname = os.path.join(
+                repo_dir_path, ExternalsDescription.GIT_SUBMODULES_FILENAME
+            )
 
         return os.path.exists(fname)
 
@@ -750,14 +777,14 @@ class GitRepository(Repository):
     # ----------------------------------------------------------------
     @staticmethod
     def _git_clone(url, repo_dir_name, verbosity):
-        """Run git clone for the side effect of creating a repository.
-        """
-        cmd = ['git', 'clone', '--quiet']
+        """Run git clone for the side effect of creating a repository."""
+        cmd = ["git", "clone", "--quiet"]
         subcmd = None
 
         cmd.extend([url, repo_dir_name])
         if verbosity >= VERBOSITY_VERBOSE:
-            printlog('    {0}'.format(' '.join(cmd)))
+            msg = " ".join(cmd)
+            printlog(f"    {msg}")
         execute_subprocess(cmd)
         if subcmd is not None:
             os.chdir(repo_dir_name)
@@ -765,16 +792,14 @@ class GitRepository(Repository):
 
     @staticmethod
     def _git_remote_add(name, url):
-        """Run the git remote command for the side effect of adding a remote
-        """
-        cmd = ['git', 'remote', 'add', name, url]
+        """Run the git remote command for the side effect of adding a remote"""
+        cmd = ["git", "remote", "add", name, url]
         execute_subprocess(cmd)
 
     @staticmethod
     def _git_fetch(remote_name):
-        """Run the git fetch command for the side effect of updating the repo
-        """
-        cmd = ['git', 'fetch', '--quiet', '--tags', remote_name]
+        """Run the git fetch command for the side effect of updating the repo"""
+        cmd = ["git", "fetch", "--quiet", "--tags", remote_name]
         execute_subprocess(cmd)
 
     @staticmethod
@@ -785,9 +810,10 @@ class GitRepository(Repository):
         form 'origin/my_feature', or 'tag1'.
 
         """
-        cmd = ['git', 'checkout', '--quiet', ref]
+        cmd = ["git", "checkout", "--quiet", ref]
         if verbosity >= VERBOSITY_VERBOSE:
-            printlog('    {0}'.format(' '.join(cmd)))
+            msg = " ".join(cmd)
+            printlog(f"    {msg}")
         execute_subprocess(cmd)
         if submodules:
             GitRepository._git_update_submodules(verbosity)
@@ -795,13 +821,15 @@ class GitRepository(Repository):
     @staticmethod
     def _git_sparse_checkout(verbosity):
         """Configure repo via read-tree."""
-        cmd = ['git', 'config', 'core.sparsecheckout', 'true']
+        cmd = ["git", "config", "core.sparsecheckout", "true"]
         if verbosity >= VERBOSITY_VERBOSE:
-            printlog('    {0}'.format(' '.join(cmd)))
+            msg = " ".join(cmd)
+            printlog(f"    {msg}")
         execute_subprocess(cmd)
-        cmd = ['git', 'read-tree', '-mu', 'HEAD']
+        cmd = ["git", "read-tree", "-mu", "HEAD"]
         if verbosity >= VERBOSITY_VERBOSE:
-            printlog('    {0}'.format(' '.join(cmd)))
+            msg = " ".join(cmd)
+            printlog("    {msg}")
         execute_subprocess(cmd)
 
     @staticmethod
@@ -811,8 +839,9 @@ class GitRepository(Repository):
         """
         # First, verify that we have a .gitmodules file
         if os.path.exists(ExternalsDescription.GIT_SUBMODULES_FILENAME):
-            cmd = ['git', 'submodule', 'update', '--init', '--recursive']
+            cmd = ["git", "submodule", "update", "--init", "--recursive"]
             if verbosity >= VERBOSITY_VERBOSE:
-                printlog('    {0}'.format(' '.join(cmd)))
+                msg = " ".join(cmd)
+                printlog(f"    {msg}")
 
             execute_subprocess(cmd)

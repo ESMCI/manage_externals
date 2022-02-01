@@ -17,13 +17,15 @@ def create_repository(component_name, repo_info, svn_ignore_ancestry=False):
 
     """
     protocol = repo_info[ExternalsDescription.PROTOCOL].lower()
-    if protocol == 'git':
+    if protocol == "git":
         repo = GitRepository(component_name, repo_info)
-    elif protocol == 'svn':
-        repo = SvnRepository(component_name, repo_info, ignore_ancestry=svn_ignore_ancestry)
-    elif protocol == 'externals_only':
+    elif protocol == "svn":
+        repo = SvnRepository(
+            component_name, repo_info, ignore_ancestry=svn_ignore_ancestry
+        )
+    elif protocol == "externals_only":
         repo = None
     else:
-        msg = 'Unknown repo protocol "{0}"'.format(protocol)
+        msg = f'Unknown repo protocol "{protocol}"'
         fatal_error(msg)
     return repo

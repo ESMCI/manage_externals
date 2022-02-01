@@ -32,8 +32,8 @@ from .global_constants import EMPTY_STR, PPRINTER, VERSION_SEPERATOR
 #
 # Globals
 #
-DESCRIPTION_SECTION = 'externals_description'
-VERSION_ITEM = 'schema_version'
+DESCRIPTION_SECTION = "externals_description"
+VERSION_ITEM = "schema_version"
 
 
 def read_externals_description_file(root_dir, file_name):
@@ -42,19 +42,23 @@ def read_externals_description_file(root_dir, file_name):
 
     """
     root_dir = os.path.abspath(root_dir)
-    msg = 'In directory : {0}'.format(root_dir)
+    msg = f"In directory : {root_dir}"
     logging.info(msg)
-    printlog('Processing externals description file : {0}'.format(file_name))
+    printlog("Processing externals description file : {file_name}")
 
     file_path = os.path.join(root_dir, file_name)
     if not os.path.exists(file_name):
         if file_name.lower() == "none":
-            msg = ('INTERNAL ERROR: Attempt to read externals file '
-                   'from {0} when not configured'.format(file_path))
+            msg = (
+                "INTERNAL ERROR: Attempt to read externals file "
+                f"from {file_path} when not configured"
+            )
         else:
-            msg = ('ERROR: Model description file, "{0}", does not '
-                   'exist at path:\n    {1}\nDid you run from the root of '
-                   'the source tree?'.format(file_name, file_path))
+            msg = (
+                f'ERROR: Model description file, "{file_name}", does not '
+                f"exist at path:\n    {file_path}\nDid you run from the root of "
+                "the source tree?"
+            )
 
         fatal_error(msg)
 
@@ -71,17 +75,19 @@ def read_externals_description_file(root_dir, file_name):
             pass
 
     if externals_description is None:
-        msg = 'Unknown file format!'
+        msg = "Unknown file format!"
         fatal_error(msg)
 
     return externals_description
 
+
 class LstripReader(object):
     "LstripReader formats .gitmodules files to be acceptable for configparser"
+
     def __init__(self, filename):
-        with open(filename, 'r') as infile:
+        with open(filename, "r", encoding="utf-8") as infile:
             lines = infile.readlines()
-        self._lines = list()
+        self._lines = []
         self._num_lines = len(lines)
         self._index = 0
         for line in lines:
@@ -96,7 +102,7 @@ class LstripReader(object):
         try:
             line = self.next()
         except StopIteration:
-            line = ''
+            line = ""
 
         if (size > 0) and (len(line) < size):
             return line[0:size]
@@ -119,29 +125,30 @@ class LstripReader(object):
     def __next__(self):
         return self.next()
 
+
 def git_submodule_status(repo_dir):
-    """Run the git submodule status command to obtain submodule hashes.
-        """
+    """Run the git submodule status command to obtain submodule hashes."""
     # This function is here instead of GitRepository to avoid a dependency loop
     cwd = os.getcwd()
     os.chdir(repo_dir)
-    cmd = ['git', 'submodule', 'status']
+    cmd = ["git", "submodule", "status"]
     git_output = execute_subprocess(cmd, output_to_caller=True)
     submodules = {}
-    submods = git_output.split('\n')
+    submods = git_output.split("\n")
     for submod in submods:
         if submod:
             status = submod[0]
-            items = submod[1:].split(' ')
+            items = submod[1:].split(" ")
             if len(items) > 2:
                 tag = items[2]
             else:
                 tag = None
 
-            submodules[items[1]] = {'hash':items[0], 'status':status, 'tag':tag}
+            submodules[items[1]] = {"hash": items[0], "status": status, "tag": tag}
 
     os.chdir(cwd)
     return submodules
+
 
 def parse_submodules_desc_section(section_items, file_path):
     """Find the path and url for this submodule description"""
@@ -149,33 +156,37 @@ def parse_submodules_desc_section(section_items, file_path):
     url = None
     for item in section_items:
         name = item[0].strip()
-        if name == 'path':
+        if name == "path":
             path = item[1].strip()
-        elif name == 'url':
+        elif name == "url":
             url = item[1].strip()
-        elif name == 'branch':
+        elif name == "branch":
             # We do not care about branch since we have a hash - silently ignore
             pass
         else:
-            msg = 'WARNING: Ignoring unknown {} property, in {}'
-            msg = msg.format(item[0], file_path) # fool pylint
+            msg = "WARNING: Ignoring unknown {} property, in {}"
+            msg = msg.format(item[0], file_path)  # fool pylint
             logging.warning(msg)
 
     return path, url
+
 
 def read_gitmodules_file(root_dir, file_name):
     """Read a .gitmodules file and convert it to be compatible with an
     externals description.
     """
+    # pylint: disable=too-many-locals
     root_dir = os.path.abspath(root_dir)
-    msg = 'In directory : {0}'.format(root_dir)
+    msg = f"In directory : {root_dir}"
     logging.info(msg)
-    printlog('Processing submodules description file : {0}'.format(file_name))
+    printlog(f"Processing submodules description file : {file_name}")
 
     file_path = os.path.join(root_dir, file_name)
     if not os.path.exists(file_name):
-        msg = ('ERROR: submodules description file, "{0}", does not '
-               'exist at path:\n    {1}'.format(file_name, file_path))
+        msg = (
+            f'ERROR: submodules description file, "{file_name}", does not '
+            f"exist at path:\n    {file_path}"
+        )
         fatal_error(msg)
 
     submodules_description = None
@@ -190,7 +201,7 @@ def read_gitmodules_file(root_dir, file_name):
         pass
 
     if submodules_description is None:
-        msg = 'Unknown file format!'
+        msg = "Unknown file format!"
         fatal_error(msg)
     else:
         # Convert the submodules description to an externals description
@@ -198,29 +209,28 @@ def read_gitmodules_file(root_dir, file_name):
         # We need to grab all the commit hashes for this repo
         submods = git_submodule_status(root_dir)
         for section in submodules_description.sections():
-            if section[0:9] == 'submodule':
+            if section[0:9] == "submodule":
                 sec_name = section[9:].strip(' "')
                 externals_description.add_section(sec_name)
                 section_items = submodules_description.items(section)
-                path, url = parse_submodules_desc_section(section_items,
-                                                          file_path)
+                path, url = parse_submodules_desc_section(section_items, file_path)
 
                 if path is None:
-                    msg = 'Submodule {} missing path'.format(sec_name)
+                    msg = f"Submodule {sec_name} missing path"
                     fatal_error(msg)
 
                 if url is None:
-                    msg = 'Submodule {} missing url'.format(sec_name)
+                    msg = f"Submodule {sec_name} missing url"
                     fatal_error(msg)
 
-                externals_description.set(sec_name,
-                                          ExternalsDescription.PATH, path)
-                externals_description.set(sec_name,
-                                          ExternalsDescription.PROTOCOL, 'git')
-                externals_description.set(sec_name,
-                                          ExternalsDescription.REPO_URL, url)
-                externals_description.set(sec_name,
-                                          ExternalsDescription.REQUIRED, 'True')
+                externals_description.set(sec_name, ExternalsDescription.PATH, path)
+                externals_description.set(
+                    sec_name, ExternalsDescription.PROTOCOL, "git"
+                )
+                externals_description.set(sec_name, ExternalsDescription.REPO_URL, url)
+                externals_description.set(
+                    sec_name, ExternalsDescription.REQUIRED, "True"
+                )
                 if sec_name in submods:
                     submod_name = sec_name
                 else:
@@ -228,40 +238,50 @@ def read_gitmodules_file(root_dir, file_name):
                     submod_name = path
 
                 if submod_name in submods:
-                    git_hash = submods[submod_name]['hash']
-                    externals_description.set(sec_name,
-                                              ExternalsDescription.HASH,
-                                              git_hash)
+                    git_hash = submods[submod_name]["hash"]
+                    externals_description.set(
+                        sec_name, ExternalsDescription.HASH, git_hash
+                    )
                 else:
-                    emsg = "submodule status has no section, '{}'"
-                    emsg += "\nCheck section names in externals config file"
-                    fatal_error(emsg.format(submod_name))
+                    emsg = (
+                        f"submodule status has no section, '{submod_name}'"
+                        "\nCheck section names in externals config file"
+                    )
+                    fatal_error(emsg)
 
         # Required items
         externals_description.add_section(DESCRIPTION_SECTION)
-        externals_description.set(DESCRIPTION_SECTION, VERSION_ITEM, '1.0.0')
+        externals_description.set(DESCRIPTION_SECTION, VERSION_ITEM, "1.0.0")
 
     return externals_description
 
+
 def create_externals_description(
-        model_data, model_format='cfg', components=None, exclude=None, parent_repo=None):
-    """Create the a externals description object from the provided data
-    """
+    model_data, model_format="cfg", components=None, exclude=None, parent_repo=None
+):
+    """Create the a externals description object from the provided data"""
     externals_description = None
-    if model_format == 'dict':
+    if model_format == "dict":
         externals_description = ExternalsDescriptionDict(
-            model_data, components=components, exclude=exclude)
-    elif model_format == 'cfg':
+            model_data, components=components, exclude=exclude
+        )
+    elif model_format == "cfg":
         major, _, _ = get_cfg_schema_version(model_data)
         if major == 1:
             externals_description = ExternalsDescriptionConfigV1(
-                model_data, components=components, exclude=exclude, parent_repo=parent_repo)
+                model_data,
+                components=components,
+                exclude=exclude,
+                parent_repo=parent_repo,
+            )
         else:
-            msg = ('Externals description file has unsupported schema '
-                   'version "{0}".'.format(major))
+            msg = (
+                "Externals description file has unsupported schema "
+                f'version "{major}".'
+            )
             fatal_error(msg)
     else:
-        msg = 'Unknown model data format "{0}"'.format(model_format)
+        msg = f'Unknown model data format "{model_format}"'
         fatal_error(msg)
     return externals_description
 
@@ -277,18 +297,19 @@ def get_cfg_schema_version(model_cfg):
     minor = integer minor version
     patch = integer patch version
     """
-    semver_str = ''
+    semver_str = ""
     try:
         semver_str = model_cfg.get(DESCRIPTION_SECTION, VERSION_ITEM)
     except (NoSectionError, NoOptionError):
-        msg = ('externals description file must have the required '
-               'section: "{0}" and item "{1}"'.format(DESCRIPTION_SECTION,
-                                                      VERSION_ITEM))
+        msg = (
+            "externals description file must have the required "
+            f'section: "{DESCRIPTION_SECTION}" and item "{VERSION_ITEM}"'
+        )
         fatal_error(msg)
 
     # NOTE(bja, 2017-11) Assume we don't care about the
     # build/pre-release metadata for now!
-    version_list = re.split(r'[-+]', semver_str)
+    version_list = re.split(r"[-+]", semver_str)
     version_str = version_list[0]
     version = version_str.split(VERSION_SEPERATOR)
     try:
@@ -296,9 +317,11 @@ def get_cfg_schema_version(model_cfg):
         minor = int(version[1].strip())
         patch = int(version[2].strip())
     except ValueError:
-        msg = ('Config file schema version must have integer digits for '
-               'major, minor and patch versions. '
-               'Received "{0}"'.format(version_str))
+        msg = (
+            "Config file schema version must have integer digits for "
+            "major, minor and patch versions. "
+            f'Received "{version_str}"'
+        )
         fatal_error(msg)
     return major, minor, patch
 
@@ -322,45 +345,48 @@ class ExternalsDescription(dict):
     input value.
 
     """
-    # keywords defining the interface into the externals description data
-    EXTERNALS = 'externals'
-    BRANCH = 'branch'
-    SUBMODULE = 'from_submodule'
-    HASH = 'hash'
-    NAME = 'name'
-    PATH = 'local_path'
-    PROTOCOL = 'protocol'
-    REPO = 'repo'
-    REPO_URL = 'repo_url'
-    REQUIRED = 'required'
-    TAG = 'tag'
-    SPARSE = 'sparse'
 
-    PROTOCOL_EXTERNALS_ONLY = 'externals_only'
-    PROTOCOL_GIT = 'git'
-    PROTOCOL_SVN = 'svn'
-    GIT_SUBMODULES_FILENAME = '.gitmodules'
+    # keywords defining the interface into the externals description data
+    EXTERNALS = "externals"
+    BRANCH = "branch"
+    SUBMODULE = "from_submodule"
+    HASH = "hash"
+    NAME = "name"
+    PATH = "local_path"
+    PROTOCOL = "protocol"
+    REPO = "repo"
+    REPO_URL = "repo_url"
+    REQUIRED = "required"
+    TAG = "tag"
+    SPARSE = "sparse"
+
+    PROTOCOL_EXTERNALS_ONLY = "externals_only"
+    PROTOCOL_GIT = "git"
+    PROTOCOL_SVN = "svn"
+    GIT_SUBMODULES_FILENAME = ".gitmodules"
     KNOWN_PRROTOCOLS = [PROTOCOL_GIT, PROTOCOL_SVN, PROTOCOL_EXTERNALS_ONLY]
 
     # v1 xml keywords
-    _V1_TREE_PATH = 'TREE_PATH'
-    _V1_ROOT = 'ROOT'
-    _V1_TAG = 'TAG'
-    _V1_BRANCH = 'BRANCH'
-    _V1_REQ_SOURCE = 'REQ_SOURCE'
+    _V1_TREE_PATH = "TREE_PATH"
+    _V1_ROOT = "ROOT"
+    _V1_TAG = "TAG"
+    _V1_BRANCH = "BRANCH"
+    _V1_REQ_SOURCE = "REQ_SOURCE"
 
-    _source_schema = {REQUIRED: True,
-                      PATH: 'string',
-                      EXTERNALS: 'string',
-                      SUBMODULE : True,
-                      REPO: {PROTOCOL: 'string',
-                             REPO_URL: 'string',
-                             TAG: 'string',
-                             BRANCH: 'string',
-                             HASH: 'string',
-                             SPARSE: 'string',
-                            }
-                     }
+    _source_schema = {
+        REQUIRED: True,
+        PATH: "string",
+        EXTERNALS: "string",
+        SUBMODULE: True,
+        REPO: {
+            PROTOCOL: "string",
+            REPO_URL: "string",
+            TAG: "string",
+            BRANCH: "string",
+            HASH: "string",
+            SPARSE: "string",
+        },
+    }
 
     def __init__(self, parent_repo=None):
         """Convert the xml into a standardized dict that can be used to
@@ -377,27 +403,25 @@ class ExternalsDescription(dict):
         self._parent_repo = parent_repo
 
     def _verify_schema_version(self):
-        """Use semantic versioning rules to verify we can process this schema.
-
-        """
-        known = '{0}.{1}.{2}'.format(self._schema_major,
-                                     self._schema_minor,
-                                     self._schema_patch)
-        received = '{0}.{1}.{2}'.format(self._input_major,
-                                        self._input_minor,
-                                        self._input_patch)
+        """Use semantic versioning rules to verify we can process this schema."""
+        known = f"{self._schema_major}.{self._schema_minor}.{self._schema_patch}"
+        received = f"{self._input_major}.{self._input_minor}.{self._input_patch}"
 
         if self._input_major != self._schema_major:
             # should never get here, the factory should handle this correctly!
-            msg = ('DEV_ERROR: version "{0}" parser received '
-                   'version "{1}" input.'.format(known, received))
+            msg = (
+                f'DEV_ERROR: version "{known}" parser received '
+                f'version "{received}" input.'
+            )
             fatal_error(msg)
 
         if self._input_minor > self._schema_minor:
-            msg = ('Incompatible schema version:\n'
-                   '  User supplied schema version "{0}" is too new."\n'
-                   '  Can only process version "{1}" files and '
-                   'older.'.format(received, known))
+            msg = (
+                "Incompatible schema version:\n"
+                f'  User supplied schema version "{received}" is too new."\n'
+                f'  Can only process version "{known}" files and '
+                "older."
+            )
             fatal_error(msg)
 
         if self._input_patch > self._schema_patch:
@@ -423,103 +447,118 @@ class ExternalsDescription(dict):
 
     def _check_data(self):
         # pylint: disable=too-many-branches,too-many-statements
-        """Check user supplied data is valid where possible.
-        """
-        for ext_name in self.keys():
-            if (self[ext_name][self.REPO][self.PROTOCOL]
-                    not in self.KNOWN_PRROTOCOLS):
-                msg = 'Unknown repository protocol "{0}" in "{1}".'.format(
-                    self[ext_name][self.REPO][self.PROTOCOL], ext_name)
+        """Check user supplied data is valid where possible."""
+        for ext_name in list(self.keys()):
+            if self[ext_name][self.REPO][self.PROTOCOL] not in self.KNOWN_PRROTOCOLS:
+                msg = (
+                    "Unknown repository protocol "
+                    f'"{self[ext_name][self.REPO][self.PROTOCOL]}" in "{ext_name}".'
+                )
                 fatal_error(msg)
 
-            if (self[ext_name][self.REPO][self.PROTOCOL] ==
-                    self.PROTOCOL_SVN):
+            if self[ext_name][self.REPO][self.PROTOCOL] == self.PROTOCOL_SVN:
                 if self.HASH in self[ext_name][self.REPO]:
-                    msg = ('In repo description for "{0}". svn repositories '
-                           'may not include the "hash" keyword.'.format(
-                               ext_name))
+                    msg = (
+                        f'In repo description for "{ext_name}". svn repositories '
+                        'may not include the "hash" keyword.'
+                    )
                     fatal_error(msg)
 
-            if ((self[ext_name][self.REPO][self.PROTOCOL] != self.PROTOCOL_GIT)
-                    and (self.SUBMODULE in self[ext_name])):
-                msg = ('self.SUBMODULE is only supported with {0} protocol, '
-                       '"{1}" is defined as an {2} repository')
-                fatal_error(msg.format(self.PROTOCOL_GIT, ext_name,
-                                       self[ext_name][self.REPO][self.PROTOCOL]))
+            if (self[ext_name][self.REPO][self.PROTOCOL] != self.PROTOCOL_GIT) and (
+                self.SUBMODULE in self[ext_name]
+            ):
+                msg = (
+                    f"self.SUBMODULE is only supported with {self.PROTOCOL_GIT} protocol, "
+                    f'"{ext_name}" is defined as an '
+                    f"{self[ext_name][self.REPO][self.PROTOCOL]} repository"
+                )
+                fatal_error(msg)
 
-            if (self[ext_name][self.REPO][self.PROTOCOL] !=
-                    self.PROTOCOL_EXTERNALS_ONLY):
+            if self[ext_name][self.REPO][self.PROTOCOL] != self.PROTOCOL_EXTERNALS_ONLY:
                 ref_count = 0
-                found_refs = ''
+                found_refs = ""
                 if self.TAG in self[ext_name][self.REPO]:
                     ref_count += 1
-                    found_refs = '"{0} = {1}", {2}'.format(
-                        self.TAG, self[ext_name][self.REPO][self.TAG],
-                        found_refs)
+                    found_refs = (
+                        f'"{self.TAG} = '
+                        f'"{self[ext_name][self.REPO][self.TAG]}", {found_refs}'
+                    )
                 if self.BRANCH in self[ext_name][self.REPO]:
                     ref_count += 1
-                    found_refs = '"{0} = {1}", {2}'.format(
-                        self.BRANCH, self[ext_name][self.REPO][self.BRANCH],
-                        found_refs)
+                    found_refs = (
+                        f'"{self.BRANCH} = '
+                        '{self[ext_name][self.REPO][self.BRANCH]}", {found_refs}'
+                    )
                 if self.HASH in self[ext_name][self.REPO]:
                     ref_count += 1
-                    found_refs = '"{0} = {1}", {2}'.format(
-                        self.HASH, self[ext_name][self.REPO][self.HASH],
-                        found_refs)
-                if (self.SUBMODULE in self[ext_name] and
-                        self[ext_name][self.SUBMODULE]):
+                    found_refs = (
+                        f'"{self.HASH} = '
+                        '{self[ext_name][self.REPO][self.HASH]}", {found_refs}'
+                    )
+                if self.SUBMODULE in self[ext_name] and self[ext_name][self.SUBMODULE]:
                     ref_count += 1
-                    found_refs = '"{0} = {1}", {2}'.format(
-                        self.SUBMODULE,
-                        self[ext_name][self.SUBMODULE], found_refs)
-
+                    found_refs = (
+                        f'"{self.SUBMODULE} = '
+                        '{self[ext_name][self.SUBMODULE]}", {found_refs}'
+                    )
                 if ref_count > 1:
-                    msg = 'Model description is over specified! '
+                    msg = "Model description is over specified! "
                     if self.SUBMODULE in self[ext_name]:
-                        msg += ('from_submodule is not compatible with '
-                                '"tag", "branch", or "hash" ')
+                        msg += (
+                            "from_submodule is not compatible with "
+                            '"tag", "branch", or "hash" '
+                        )
                     else:
-                        msg += (' Only one of "tag", "branch", or "hash" '
-                                'may be specified ')
+                        msg += (
+                            ' Only one of "tag", "branch", or "hash" '
+                            "may be specified "
+                        )
 
-                    msg += 'for repo description of "{0}".'.format(ext_name)
-                    msg = '{0}\nFound: {1}'.format(msg, found_refs)
+                    msg += f'for repo description of "{ext_name}".'.format(ext_name)
+                    msg += f"\nFound: {found_refs}"
                     fatal_error(msg)
                 elif ref_count < 1:
-                    msg = ('Model description is under specified! One of '
-                           '"tag", "branch", or "hash" must be specified for '
-                           'repo description of "{0}"'.format(ext_name))
+                    msg = (
+                        "Model description is under specified! One of "
+                        '"tag", "branch", or "hash" must be specified for '
+                        f'repo description of "{ext_name}"'
+                    )
                     fatal_error(msg)
 
-                if (self.REPO_URL not in self[ext_name][self.REPO] and
-                        (self.SUBMODULE not in self[ext_name] or
-                         not self[ext_name][self.SUBMODULE])):
-                    msg = ('Model description is under specified! Must have '
-                           '"repo_url" in repo '
-                           'description for "{0}"'.format(ext_name))
+                if self.REPO_URL not in self[ext_name][self.REPO] and (
+                    self.SUBMODULE not in self[ext_name]
+                    or not self[ext_name][self.SUBMODULE]
+                ):
+                    msg = (
+                        "Model description is under specified! Must have "
+                        '"repo_url" in repo '
+                        f'description for "{ext_name}"'
+                    )
                     fatal_error(msg)
 
-                if (self.SUBMODULE in self[ext_name] and
-                        self[ext_name][self.SUBMODULE]):
+                if self.SUBMODULE in self[ext_name] and self[ext_name][self.SUBMODULE]:
                     if self.REPO_URL in self[ext_name][self.REPO]:
-                        msg = ('Model description is over specified! '
-                               'from_submodule keyword is not compatible '
-                               'with {0} keyword for'.format(self.REPO_URL))
-                        msg = '{0} repo description of "{1}"'.format(msg,
-                                                                     ext_name)
+                        msg = (
+                            "Model description is over specified! "
+                            "from_submodule keyword is not compatible "
+                            f"with {self.REPO_URL} keyword for"
+                        )
+                        msg += f' repo description of "{ext_name}"'
                         fatal_error(msg)
 
                     if self.PATH in self[ext_name]:
-                        msg = ('Model description is over specified! '
-                               'from_submodule keyword is not compatible with '
-                               '{0} keyword for'.format(self.PATH))
-                        msg = '{0} repo description of "{1}"'.format(msg,
-                                                                     ext_name)
+                        msg = (
+                            "Model description is over specified! "
+                            "from_submodule keyword is not compatible with "
+                            f"{self.PATH} keyword for"
+                        )
+                        msg += f' repo description of "{ext_name}"'
                         fatal_error(msg)
 
                 if self.REPO_URL in self[ext_name][self.REPO]:
                     url = expand_local_url(
-                        self[ext_name][self.REPO][self.REPO_URL], ext_name)
+                        self[ext_name][self.REPO][self.REPO_URL], ext_name
+                    )
                     self[ext_name][self.REPO][self.REPO_URL] = url
 
     def _check_optional(self):
@@ -531,7 +570,7 @@ class ExternalsDescription(dict):
         default values if appropriate.
 
         """
-        submod_desc = None      # Only load submodules info once
+        submod_desc = None  # Only load submodules info once
         for field in self:
             # truely optional
             if self.EXTERNALS not in self[field]:
@@ -555,21 +594,25 @@ class ExternalsDescription(dict):
                 if self._parent_repo is None:
                     # No parent == no submodule information
                     PPRINTER.pprint(self[field])
-                    msg = 'No parent submodule for "{0}"'.format(field)
+                    msg = f'No parent submodule for "{field}"'
                     fatal_error(msg)
                 elif self._parent_repo.protocol() != self.PROTOCOL_GIT:
                     PPRINTER.pprint(self[field])
-                    msg = 'Parent protocol, "{0}", does not support submodules'
-                    fatal_error(msg.format(self._parent_repo.protocol()))
+                    msg = (
+                        f'Parent protocol, "{self._parent_repo.protocol()}"'
+                        ", does not support submodules"
+                    )
+                    fatal_error(msg)
                 else:
                     args = self._repo_config_from_submodule(field, submod_desc)
                     repo_url, repo_path, ref_hash, submod_desc = args
 
                     if repo_url is None:
-                        msg = ('Cannot checkout "{0}" as a submodule, '
-                               'repo not found in {1} file')
-                        fatal_error(msg.format(field,
-                                               self.GIT_SUBMODULES_FILENAME))
+                        msg = (
+                            f'Cannot checkout "{field}" as a submodule, '
+                            f"repo not found in {self.GIT_SUBMODULES_FILENAME} file"
+                        )
+                        fatal_error(msg)
                     # Fill in submodule fields
                     self[field][self.REPO][self.REPO_URL] = repo_url
                     self[field][self.REPO][self.HASH] = ref_hash
@@ -589,13 +632,14 @@ class ExternalsDescription(dict):
         its submodule configuration information.
         """
         if submod_desc is None:
-            repo_path = os.getcwd() # Is this always correct?
+            repo_path = os.getcwd()  # Is this always correct?
             submod_file = self._parent_repo.submodules_file(repo_path=repo_path)
             if submod_file is None:
-                msg = ('Cannot checkout "{0}" from submodule information\n'
-                       '       Parent repo, "{1}" does not have submodules')
-                fatal_error(msg.format(field, self._parent_repo.name()))
-
+                msg = (
+                    f'Cannot checkout "{field}" from submodule information\n'
+                    f'       Parent repo, "{self._parent_repo.name()}" does not have submodules'
+                )
+                fatal_error(msg)
             submod_file = read_gitmodules_file(repo_path, submod_file)
             submod_desc = create_externals_description(submod_file)
 
@@ -618,25 +662,25 @@ class ExternalsDescription(dict):
         fields.
 
         """
-        def print_compare_difference(data_a, data_b, loc_a, loc_b):
-            """Look through the data structures and print the differences.
 
-            """
+        def print_compare_difference(data_a, data_b, loc_a, loc_b):
+            """Look through the data structures and print the differences."""
             for item in data_a:
                 if item in data_b:
                     if not isinstance(data_b[item], type(data_a[item])):
-                        printlog("    {item}: {loc} = {val} ({val_type})".format(
-                            item=item, loc=loc_a, val=data_a[item],
-                            val_type=type(data_a[item])))
-                        printlog("    {item}  {loc} = {val} ({val_type})".format(
-                            item=' ' * len(item), loc=loc_b, val=data_b[item],
-                            val_type=type(data_b[item])))
+                        printlog(
+                            f"    {item}: {loc_a} = {data_a[item]} ({type(data_a[item])})"
+                        )
+                        whitespace = " " * len(item)
+                        printlog(
+                            f"    {whitespace}  {loc_b} = {data_b[item]} ({type(data_b[item])})"
+                        )
                 else:
-                    printlog("    {item}: {loc} = {val} ({val_type})".format(
-                        item=item, loc=loc_a, val=data_a[item],
-                        val_type=type(data_a[item])))
-                    printlog("    {item}  {loc} missing".format(
-                        item=' ' * len(item), loc=loc_b))
+                    printlog(
+                        f"    {item}: {loc_a} = {data_a[item]} ({type(data_a[item])})"
+                    )
+                    whitespace = " " * len(item)
+                    printlog(f"    {whitespace}  {loc_b} missing")
 
         def validate_data_struct(schema, data):
             """Compare a data structure against a schema and validate all required
@@ -652,8 +696,7 @@ class ExternalsDescription(dict):
                 for key in schema:
                     in_ref = in_ref and (key in data)
                     if in_ref:
-                        valid = valid and (
-                            validate_data_struct(schema[key], data[key]))
+                        valid = valid and (validate_data_struct(schema[key], data[key]))
 
                 is_valid = in_ref and valid
             else:
@@ -664,12 +707,11 @@ class ExternalsDescription(dict):
             if not is_valid:
                 printlog("  Unmatched schema and input:")
                 if isinstance(schema, dict):
-                    print_compare_difference(schema, data, 'schema', 'input')
-                    print_compare_difference(data, schema, 'input', 'schema')
+                    print_compare_difference(schema, data, "schema", "input")
+                    print_compare_difference(data, schema, "input", "schema")
                 else:
-                    printlog("    schema = {0} ({1})".format(
-                        schema, type(schema)))
-                    printlog("    input = {0} ({1})".format(data, type(data)))
+                    printlog(f"    schema = {schema} ({type(schema)})")
+                    printlog(f"    input = {data} ({type(data)})")
 
             return is_valid
 
@@ -678,7 +720,7 @@ class ExternalsDescription(dict):
             if not valid:
                 PPRINTER.pprint(self._source_schema)
                 PPRINTER.pprint(self[field])
-                msg = 'ERROR: source for "{0}" did not validate'.format(field)
+                msg = f'ERROR: source for "{field}" did not validate'
                 fatal_error(msg)
 
 
@@ -690,8 +732,7 @@ class ExternalsDescriptionDict(ExternalsDescription):
     """
 
     def __init__(self, model_data, components=None, exclude=None):
-        """Parse a native dictionary into a externals description.
-        """
+        """Parse a native dictionary into a externals description."""
         ExternalsDescription.__init__(self)
         self._schema_major = 1
         self._schema_minor = 0
@@ -729,8 +770,11 @@ class ExternalsDescriptionConfigV1(ExternalsDescription):
         self._schema_major = 1
         self._schema_minor = 1
         self._schema_patch = 0
-        self._input_major, self._input_minor, self._input_patch = \
-            get_cfg_schema_version(model_data)
+        (
+            self._input_major,
+            self._input_minor,
+            self._input_patch,
+        ) = get_cfg_schema_version(model_data)
         self._verify_schema_version()
         self._remove_metadata(model_data)
         self._parse_cfg(model_data, components=components, exclude=exclude)
@@ -746,11 +790,10 @@ class ExternalsDescriptionConfigV1(ExternalsDescription):
         model_data.remove_section(DESCRIPTION_SECTION)
 
     def _parse_cfg(self, cfg_data, components=None, exclude=None):
-        """Parse a config_parser object into a externals description.
-        """
+        """Parse a config_parser object into a externals description."""
+
         def list_to_dict(input_list, convert_to_lower_case=True):
-            """Convert a list of key-value pairs into a dictionary.
-            """
+            """Convert a list of key-value pairs into a dictionary."""
             output_dict = {}
             for item in input_list:
                 key = item[0].strip()
@@ -776,6 +819,5 @@ class ExternalsDescriptionConfigV1(ExternalsDescription):
                     self[name][self.REPO][item] = self[name][item]
                     del self[name][item]
                 else:
-                    msg = ('Invalid input: "{sect}" contains unknown '
-                           'item "{item}".'.format(sect=name, item=item))
+                    msg = f'Invalid input: "{name}" contains unknown ' f'item "{item}".'
                     fatal_error(msg)

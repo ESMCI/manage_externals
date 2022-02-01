@@ -7,10 +7,10 @@ from __future__ import print_function
 
 import pprint
 
-EMPTY_STR = ''
-LOCAL_PATH_INDICATOR = '.'
-VERSION_SEPERATOR = '.'
-LOG_FILE_NAME = 'manage_externals.log'
+EMPTY_STR = ""
+LOCAL_PATH_INDICATOR = "."
+VERSION_SEPERATOR = "."
+LOG_FILE_NAME = "manage_externals.log"
 PPRINTER = pprint.PrettyPrinter(indent=4)
 
 VERBOSITY_DEFAULT = 0

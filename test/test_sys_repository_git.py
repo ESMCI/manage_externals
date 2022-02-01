@@ -44,13 +44,13 @@ class GitTestCase(unittest.TestCase):
 
         # Ensure it has a single string
         self.assertEqual(1, len(maybe_hash.split()),
-                         msg="maybe_hash has multiple strings: {}".format(maybe_hash))
+                         msg=f"maybe_hash has multiple strings: {maybe_hash}")
 
         # Ensure that the only characters in the string are ones allowed
         # in hashes
         allowed_chars_set = set('0123456789abcdef')
         self.assertTrue(set(maybe_hash) <= allowed_chars_set,
-                        msg="maybe_hash has non-hash characters: {}".format(maybe_hash))
+                        msg=f"maybe_hash has non-hash characters: {maybe_hash}")
 
 
 class TestGitTestCase(GitTestCase):
@@ -115,7 +115,7 @@ class TestGitRepositoryGitCommands(GitTestCase):
         data = {self._name:
                 {
                     ExternalsDescription.REQUIRED: False,
-                    ExternalsDescription.PATH: 'junk',
+                    ExternalsDescription.PATH: 'git junk',
                     ExternalsDescription.EXTERNALS: '',
                     ExternalsDescription.REPO: rdata,
                 },
@@ -138,7 +138,7 @@ class TestGitRepositoryGitCommands(GitTestCase):
     @staticmethod
     def add_git_commit():
         """Add a git commit in the current directory"""
-        with open('README', 'a') as myfile:
+        with open('README', 'a', encoding="utf-8") as myfile:
             myfile.write('more info')
         execute_subprocess(['git', 'add', 'README'])
         execute_subprocess(['git', 'commit', '-m', 'my commit message'])

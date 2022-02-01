@@ -1,5 +1,4 @@
 """
-
 FIXME(bja, 2017-11) External and SourceTree have a circular dependancy!
 """
 
@@ -16,6 +15,7 @@ from .externals_status import ExternalStatus
 from .utils import fatal_error, printlog
 from .global_constants import EMPTY_STR, LOCAL_PATH_INDICATOR
 from .global_constants import VERBOSITY_VERBOSE
+
 
 class _External(object):
     """
@@ -57,8 +57,10 @@ class _External(object):
         self._base_dir_path = os.path.dirname(self._repo_dir_path)
         # repo_dir_name : base_dir_path + repo_dir_name = rep_dir_path
         self._repo_dir_name = os.path.basename(self._repo_dir_path)
-        assert(os.path.join(self._base_dir_path, self._repo_dir_name)
-               == self._repo_dir_path)
+        assert (
+            os.path.join(self._base_dir_path, self._repo_dir_name)
+            == self._repo_dir_path
+        )
 
         self._required = ext_description[ExternalsDescription.REQUIRED]
         self._externals = ext_description[ExternalsDescription.EXTERNALS]
@@ -68,12 +70,14 @@ class _External(object):
                 self._externals = ExternalsDescription.GIT_SUBMODULES_FILENAME
 
         repo = create_repository(
-            name, ext_description[ExternalsDescription.REPO],
-            svn_ignore_ancestry=svn_ignore_ancestry)
+            name,
+            ext_description[ExternalsDescription.REPO],
+            svn_ignore_ancestry=svn_ignore_ancestry,
+        )
         if repo:
             self._repo = repo
 
-        if self._externals and (self._externals.lower() != 'none'):
+        if self._externals and (self._externals.lower() != "none"):
             self._create_externals_sourcetree()
 
     def get_name(self):
@@ -113,16 +117,18 @@ class _External(object):
 
         if not os.path.exists(self._repo_dir_path):
             self._stat.sync_state = ExternalStatus.EMPTY
-            msg = ('status check: repository directory for "{0}" does not '
-                   'exist.'.format(self._name))
+            msg = (
+                f'status check: repository directory for "{self._name}" does not '
+                "exist."
+            )
             logging.info(msg)
-            self._stat.current_version = 'not checked out'
+            self._stat.current_version = "not checked out"
             # NOTE(bja, 2018-01) directory doesn't exist, so we cannot
             # use repo to determine the expected version. We just take
             # a best-guess based on the assumption that only tag or
             # branch should be set, but not both.
             if not self._repo:
-                self._stat.expected_version = 'unknown'
+                self._stat.expected_version = "unknown"
             else:
                 self._stat.expected_version = self._repo.tag() + self._repo.branch()
         else:
@@ -170,8 +176,7 @@ class _External(object):
                 os.makedirs(self._base_dir_path)
             except OSError as error:
                 if error.errno != errno.EEXIST:
-                    msg = 'Could not create directory "{0}"'.format(
-                        self._base_dir_path)
+                    msg = f'Could not create directory "({self._base_dir_path})"'
                     fatal_error(msg)
 
         if self._stat.source_type != ExternalStatus.STANDALONE:
@@ -191,12 +196,15 @@ class _External(object):
             else:
                 checkout_verbosity = verbosity
 
-            self._repo.checkout(self._base_dir_path, self._repo_dir_name,
-                                checkout_verbosity, self.clone_recursive())
+            self._repo.checkout(
+                self._base_dir_path,
+                self._repo_dir_name,
+                checkout_verbosity,
+                self.clone_recursive(),
+            )
 
     def checkout_externals(self, verbosity, load_all):
-        """Checkout the sub-externals for this object
-        """
+        """Checkout the sub-externals for this object"""
         if self.load_externals():
             if self._externals_sourcetree:
                 # NOTE(bja, 2018-02): the subtree externals objects
@@ -210,26 +218,26 @@ class _External(object):
             self._externals_sourcetree.checkout(verbosity, load_all)
 
     def load_externals(self):
-        'Return True iff an externals file should be loaded'
+        "Return True iff an externals file should be loaded"
         load_ex = False
         if os.path.exists(self._repo_dir_path):
             if self._externals:
-                if self._externals.lower() != 'none':
-                    load_ex = os.path.exists(os.path.join(self._repo_dir_path,
-                                                          self._externals))
+                if self._externals.lower() != "none":
+                    load_ex = os.path.exists(
+                        os.path.join(self._repo_dir_path, self._externals)
+                    )
 
         return load_ex
 
     def clone_recursive(self):
-        'Return True iff any .gitmodules files should be processed'
+        "Return True iff any .gitmodules files should be processed"
         # Try recursive unless there is an externals entry
         recursive = not self._externals
 
         return recursive
 
     def _create_externals_sourcetree(self):
-        """
-        """
+        """ """
         if not os.path.exists(self._repo_dir_path):
             # NOTE(bja, 2017-10) repository has not been checked out
             # yet, can't process the externals file. Assume we are
@@ -239,9 +247,11 @@ class _External(object):
 
         cwd = os.getcwd()
         os.chdir(self._repo_dir_path)
-        if self._externals.lower() == 'none':
-            msg = ('Internal: Attempt to create source tree for '
-                   'externals = none in {}'.format(self._repo_dir_path))
+        if self._externals.lower() == "none":
+            msg = (
+                "Internal: Attempt to create source tree for "
+                f"externals = none in ({self._repo_dir_path})"
+            )
             fatal_error(msg)
 
         if not os.path.exists(self._externals):
@@ -251,18 +261,18 @@ class _External(object):
         if not os.path.exists(self._externals):
             # NOTE(bja, 2017-10) this check is redundent with the one
             # in read_externals_description_file!
-            msg = ('External externals description file "{0}" '
-                   'does not exist! In directory: {1}'.format(
-                       self._externals, self._repo_dir_path))
+            msg = (
+                f'External externals description file "{self._externals}" '
+                f"does not exist! In directory: {self._repo_dir_path}"
+            )
             fatal_error(msg)
 
         externals_root = self._repo_dir_path
-        model_data = read_externals_description_file(externals_root,
-                                                     self._externals)
-        externals = create_externals_description(model_data,
-                                                 parent_repo=self._repo)
+        model_data = read_externals_description_file(externals_root, self._externals)
+        externals = create_externals_description(model_data, parent_repo=self._repo)
         self._externals_sourcetree = SourceTree(externals_root, externals)
         os.chdir(cwd)
+
 
 class SourceTree(object):
     """
@@ -297,7 +307,7 @@ class SourceTree(object):
 
         summary = {}
         for comp in load_comps:
-            printlog('{0}, '.format(comp), end='')
+            printlog(f"{comp}, ", end="")
             stat = self._all_components[comp].status()
             stat_final = {}
             for name in stat.keys():
@@ -308,8 +318,7 @@ class SourceTree(object):
                     stat_final[name] = stat[name]
                 else:
                     # append relative_path_base to path and store under key = updated path
-                    modified_path = os.path.join(relative_path_base,
-                                                 stat[name].path)
+                    modified_path = os.path.join(relative_path_base, stat[name].path)
                     stat_final[modified_path] = stat[name]
                     stat_final[modified_path].path = modified_path
             summary.update(stat_final)
@@ -326,9 +335,9 @@ class SourceTree(object):
         If load_all is True and load_comp is None, only load the required externals.
         """
         if verbosity >= VERBOSITY_VERBOSE:
-            printlog('Checking out externals: ')
+            printlog("Checking out externals: ")
         else:
-            printlog('Checking out externals: ', end='')
+            printlog("Checking out externals: ", end="")
 
         if load_all:
             tmp_comps = self._all_components.keys()
@@ -338,11 +347,13 @@ class SourceTree(object):
             tmp_comps = self._required_compnames
         # Sort by path so that if paths are nested the
         # parent repo is checked out first.
-        load_comps = sorted(tmp_comps, key=lambda comp: self._all_components[comp].get_local_path())
+        load_comps = sorted(
+            tmp_comps, key=lambda comp: self._all_components[comp].get_local_path()
+        )
         # checkout the primary externals
         for comp in load_comps:
             if verbosity < VERBOSITY_VERBOSE:
-                printlog('{0}, '.format(comp), end='')
+                printlog(f"{comp}, ", end="")
             else:
                 # verbose output handled by the _External object, just
                 # output a newline
@@ -350,4 +361,4 @@ class SourceTree(object):
             self._all_components[comp].checkout(verbosity, load_all)
             # now give each external an opportunitity to checkout it's externals.
             self._all_components[comp].checkout_externals(verbosity, load_all)
-        printlog('')
+        printlog("")
