@@ -44,7 +44,7 @@ def read_externals_description_file(root_dir, file_name):
     root_dir = os.path.abspath(root_dir)
     msg = f"In directory : {root_dir}"
     logging.info(msg)
-    printlog("Processing externals description file : {file_name}")
+    printlog(f"Processing externals description file : {file_name}")
 
     file_path = os.path.join(root_dir, file_name)
     if not os.path.exists(file_name):
