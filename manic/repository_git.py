@@ -381,7 +381,6 @@ class GitRepository(Repository):
         is_branch = self._ref_is_branch(ref, remote_name, dirname)
         is_hash = self._ref_is_hash(ref, dirname)
         is_valid = is_tag or is_branch or is_hash
-        print(f"is_tag {is_tag} is_branch {is_branch} is_valid {is_valid}")
         if not is_valid:
             msg = ('In repo "{0}": reference "{1}" does not appear to be a '
                    'valid tag, branch or hash! Please verify the reference '
