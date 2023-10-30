@@ -380,8 +380,8 @@ class GitRepository(Repository):
         is_tag = self._ref_is_tag(ref, dirname)
         is_branch = self._ref_is_branch(ref, remote_name, dirname)
         is_hash = self._ref_is_hash(ref, dirname)
-
         is_valid = is_tag or is_branch or is_hash
+        print(f"is_tag {is_tag} is_branch {is_branch} is_valid {is_valid}")
         if not is_valid:
             msg = ('In repo "{0}": reference "{1}" does not appear to be a '
                    'valid tag, branch or hash! Please verify the reference '
@@ -710,7 +710,10 @@ class GitRepository(Repository):
         cmd = ('git -C {dirname} ls-remote --exit-code --heads '
                '{remote_name} {ref}').format(
                    dirname=dirname, remote_name=remote_name, ref=ref).split()
-        status = execute_subprocess(cmd, status_to_caller=True)
+        status, output = execute_subprocess(cmd, status_to_caller=True, output_to_caller=True)
+        if not status and not f"refs/heads/{ref}" in output:
+            # In this case the ref is contained in the branch name but is not the complete branch name
+            return -1
         return status
 
     @staticmethod
