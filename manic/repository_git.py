@@ -362,12 +362,20 @@ class GitRepository(Repository):
 
     def _sparse_checkout(self, repo_dir, verbosity):
         """Use git read-tree to thin the working tree."""
-        cmd = ['cp', os.path.join(repo_dir, self._sparse),
-               os.path.join(repo_dir,
-                            '.git/info/sparse-checkout')]
-        if verbosity >= VERBOSITY_VERBOSE:
-            printlog('    {0}'.format(' '.join(cmd)))
-        execute_subprocess(cmd)
+
+        sparse_filepath = os.path.join(repo_dir, self._sparse)
+        if os.path.isfile(sparse_filepath):
+            cmd = ['cp', os.path.join(repo_dir, self._sparse),
+                   os.path.join(repo_dir,
+                                '.git/info/sparse-checkout')]
+            if verbosity >= VERBOSITY_VERBOSE:
+                printlog('    {0}'.format(' '.join(cmd)))
+            execute_subprocess(cmd)
+        else:
+            with open(os.path.join(repo_dir,'.git/info/sparse-checkout'),"w") as fsc:
+                fsc.write("/"+self._sparse+"/")
+
+
         self._git_sparse_checkout(verbosity, repo_dir)
 
     def _check_for_valid_ref(self, ref, remote_name, dirname):
@@ -380,6 +388,7 @@ class GitRepository(Repository):
         is_tag = self._ref_is_tag(ref, dirname)
         is_branch = self._ref_is_branch(ref, remote_name, dirname)
         is_hash = self._ref_is_hash(ref, dirname)
+
         is_valid = is_tag or is_branch or is_hash
         if not is_valid:
             msg = ('In repo "{0}": reference "{1}" does not appear to be a '
@@ -709,10 +718,7 @@ class GitRepository(Repository):
         cmd = ('git -C {dirname} ls-remote --exit-code --heads '
                '{remote_name} {ref}').format(
                    dirname=dirname, remote_name=remote_name, ref=ref).split()
-        status, output = execute_subprocess(cmd, status_to_caller=True, output_to_caller=True)
-        if not status and not f"refs/heads/{ref}" in output:
-            # In this case the ref is contained in the branch name but is not the complete branch name
-            return -1
+        status = execute_subprocess(cmd, status_to_caller=True)
         return status
 
     @staticmethod

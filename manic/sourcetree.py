@@ -293,7 +293,15 @@ class SourceTree(object):
             required = desc[ExternalsDescription.REQUIRED]
             repo_info = desc[ExternalsDescription.REPO]
             subexternals_path = desc[ExternalsDescription.EXTERNALS]
-
+            if repo_info['protocol'] == 'svn' and 'github.com' in repo_info['repo_url']:
+                # change to git sparse checkout
+                repo_info['protocol'] = 'git'
+                if repo_info['repo_url'].endswith('tags/'):
+                    repo_info['repo_url'] =  (repo_info['repo_url'])[:-5]
+                    slash_index = repo_info['tag'].index('/')
+                    repo_info['sparse'] = (repo_info['tag'])[slash_index+1:]
+                    repo_info['tag'] = (repo_info['tag'])[:slash_index]
+                
             repo = create_repository(comp,
                                      repo_info,
                                      svn_ignore_ancestry=svn_ignore_ancestry)
