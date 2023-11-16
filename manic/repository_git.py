@@ -7,6 +7,7 @@ from __future__ import print_function
 
 import copy
 import os
+import sys
 
 from .global_constants import EMPTY_STR, LOCAL_PATH_INDICATOR
 from .global_constants import VERBOSITY_VERBOSE
@@ -843,7 +844,7 @@ class GitRepository(Repository):
         # submodules from file doesn't work without overriding the protocol, this is done
         # for testing submodule support but should not be done in practice
         file_protocol = ""
-        if "test/tmp/test_submodule" in dirname:
+        if 'unittest' in sys.modules.keys():
             file_protocol = "-c protocol.file.allow=always"
 
         # First, verify that we have a .gitmodules file
