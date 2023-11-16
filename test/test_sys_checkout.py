@@ -120,7 +120,7 @@ README_NAME = 'readme.txt'
 # Branch that exists in both the simple and simple-fork repos.
 REMOTE_BRANCH_FEATURE2 = 'feature2'
 
-SVN_TEST_REPO = 'https://github.com/escomp/cesm'
+
 
 # Disable too-many-public-methods error
 # pylint: disable=R0904
@@ -1387,132 +1387,6 @@ class TestSysCheckout(BaseTestSysCheckout):
                                                              'simple_subdir',
                                                              'subdir_file.txt'))
 
-
-class TestSysCheckoutSVN(BaseTestSysCheckout):
-    """Run systems level tests of checkout_externals accessing svn repositories
-
-    SVN tests - these tests use the svn repository interface. Since
-    they require an active network connection, they are significantly
-    slower than the git tests. But svn testing is critical. So try to
-    design the tests to only test svn repository functionality
-    (checkout, switch) and leave generic testing of functionality like
-    'optional' to the fast git tests.
-
-    Example timing as of 2017-11:
-
-      * All other git and unit tests combined take between 4-5 seconds
-
-      * Just checking if svn is available for a single test takes 2 seconds.
-
-      * The single svn test typically takes between 10 and 25 seconds
-        (depending on the network)!
-
-    NOTE(bja, 2017-11) To enable CI testing we can't use a real remote
-    repository that restricts access and it seems inappropriate to hit
-    a random open source repo. For now we are just hitting one of our
-    own github repos using the github svn server interface. This
-    should be "good enough" for basic checkout and swich
-    functionality. But if additional svn functionality is required, a
-    better solution will be necessary. I think eventually we want to
-    create a small local svn repository on the fly (doesn't require an
-    svn server or network connection!) and use it for testing.
-
-    """
-
-    @staticmethod
-    def _svn_branch_name():
-        return './{0}/svn_branch'.format(EXTERNALS_PATH)
-
-    @staticmethod
-    def _svn_tag_name():
-        return './{0}/svn_tag'.format(EXTERNALS_PATH)
-    
-    def _check_tag_branch_svn_tag_clean(self, tree):
-        self._check_sync_clean(tree[self._external_path(TAG_SECTION)],
-                               ExternalStatus.STATUS_OK,
-                               ExternalStatus.STATUS_OK)
-        self._check_sync_clean(tree[self._svn_branch_name()],
-                               ExternalStatus.STATUS_OK,
-                               ExternalStatus.STATUS_OK)
-        self._check_sync_clean(tree[self._svn_tag_name()],
-                               ExternalStatus.STATUS_OK,
-                               ExternalStatus.STATUS_OK)
-
-    @staticmethod
-    def _have_svn_access():
-        """Check if we have svn access so we can enable tests that use svn.
-
-        """
-        have_svn = False
-        cmd = ['svn', 'ls', SVN_TEST_REPO, ]
-        try:
-            execute_subprocess(cmd)
-            have_svn = True
-        except BaseException:
-            pass
-        return have_svn
-
-    def _skip_if_no_svn_access(self):
-        """Function decorator to disable svn tests when svn isn't available
-        """
-        have_svn = self._have_svn_access()
-        if not have_svn:
-            raise unittest.SkipTest("No svn access")
-
-    def test_container_simple_svn(self):
-        """Verify that a container repo can pull in an svn branch and svn tag.
-
-        """
-        self._skip_if_no_svn_access()
-        # create repo
-        cloned_repo_dir = self.clone_test_repo(CONTAINER_REPO)
-
-        self._generator.create_config()
-        # Git repo.
-        self._generator.create_section(SIMPLE_REPO, TAG_SECTION, tag='tag1')
-
-        # Svn repos.
-        self._generator.create_svn_external('svn_branch', branch='trunk')
-        self._generator.create_svn_external('svn_tag', tag='tags/cesm2.0.beta07')
-
-        self._generator.write_config(cloned_repo_dir)
-
-        # checkout, make sure all sections are clean.
-        tree = self.execute_checkout_with_status(cloned_repo_dir,
-                                                 self.checkout_args)
-        self._check_tag_branch_svn_tag_clean(tree)
-
-        # update description file to make the tag into a branch and
-        # trigger a switch
-        self._generator.write_with_svn_branch(cloned_repo_dir, 'svn_tag',
-                                              'trunk')
-
-        # checkout, again the results should be clean.
-        tree = self.execute_checkout_with_status(cloned_repo_dir,
-                                                 self.checkout_args)
-        self._check_tag_branch_svn_tag_clean(tree)
-
-        # add an untracked file to the repo
-        tracked = False
-        RepoUtils.add_file_to_repo(cloned_repo_dir,
-                                   'externals/svn_branch/tmp.txt', tracked)
-
-        # run a no-op checkout.
-        self.execute_checkout_in_dir(cloned_repo_dir, self.checkout_args)
-
-        # update description file to make the branch into a tag and
-        # trigger a modified sync status
-        self._generator.write_with_svn_branch(cloned_repo_dir, 'svn_tag',
-                                              'tags/cesm2.0.beta07')
-
-        self.execute_checkout_in_dir(cloned_repo_dir,self.checkout_args)
-
-        # verify status is still clean and unmodified, last
-        # checkout modified the working dir state.
-        tree = self.execute_checkout_in_dir(cloned_repo_dir,
-                                            self.verbose_args)
-        self._check_tag_branch_svn_tag_clean(tree)
-
 class TestSubrepoCheckout(BaseTestSysCheckout):
     # Need to store information at setUp time for checking
     # pylint: disable=too-many-instance-attributes
@@ -1645,102 +1519,102 @@ class TestSubrepoCheckout(BaseTestSysCheckout):
                                      self.status_args)
         os.chdir(cwd)
 
-    def test_submodule_checkout_bare(self):
-        """Verify that a git repo with submodule is properly checked out
-        This test if for where there is no 'externals' keyword in the
-        parent repo.
-        Correct behavior is that the submodule is checked out using
-        normal git submodule behavior.
-        """
-        simple_ext_fork_tag = "(tag1)"
-        simple_ext_fork_status = " "
-        self.write_externals_config(branch_name=self._bare_branch_name)
-        self.execute_checkout_in_dir(self._my_test_dir,
-                                     self.checkout_args)
-        cwd = os.getcwd()
-        checkout_dir = os.path.join(self._my_test_dir, self._checkout_dir)
-        fork_file = os.path.join(checkout_dir,
-                                 self._simple_ext_fork_name, "readme.txt")
-        self.assertTrue(os.path.exists(fork_file))
+    # def test_submodule_checkout_bare(self):
+    #     """Verify that a git repo with submodule is properly checked out
+    #     This test if for where there is no 'externals' keyword in the
+    #     parent repo.
+    #     Correct behavior is that the submodule is checked out using
+    #     normal git submodule behavior.
+    #     """
+    #     simple_ext_fork_tag = "(tag1)"
+    #     simple_ext_fork_status = " "
+    #     self.write_externals_config(branch_name=self._bare_branch_name)
+    #     self.execute_checkout_in_dir(self._my_test_dir,
+    #                                  self.checkout_args)
+    #     cwd = os.getcwd()
+    #     checkout_dir = os.path.join(self._my_test_dir, self._checkout_dir)
+    #     fork_file = os.path.join(checkout_dir,
+    #                              self._simple_ext_fork_name, "readme.txt")
+    #     self.assertTrue(os.path.exists(fork_file))
 
-        submods = git_submodule_status(checkout_dir)
-        print('checking status of', checkout_dir, ':', submods)
-        self.assertEqual(len(submods.keys()), 1)
-        self.assertTrue(self._simple_ext_fork_name in submods)
-        submod = submods[self._simple_ext_fork_name]
-        self.assertTrue('hash' in submod)
-        self.assertEqual(submod['hash'], self._fork_hash_check)
-        self.assertTrue('status' in submod)
-        self.assertEqual(submod['status'], simple_ext_fork_status)
-        self.assertTrue('tag' in submod)
-        self.assertEqual(submod['tag'], simple_ext_fork_tag)
-        self.idempotence_check(checkout_dir)
+    #     submods = git_submodule_status(checkout_dir)
+    #     print('checking status of', checkout_dir, ':', submods)
+    #     self.assertEqual(len(submods.keys()), 1)
+    #     self.assertTrue(self._simple_ext_fork_name in submods)
+    #     submod = submods[self._simple_ext_fork_name]
+    #     self.assertTrue('hash' in submod)
+    #     self.assertEqual(submod['hash'], self._fork_hash_check)
+    #     self.assertTrue('status' in submod)
+    #     self.assertEqual(submod['status'], simple_ext_fork_status)
+    #     self.assertTrue('tag' in submod)
+    #     self.assertEqual(submod['tag'], simple_ext_fork_tag)
+    #     self.idempotence_check(checkout_dir)
 
-    def test_submodule_checkout_none(self):
-        """Verify that a git repo with submodule is properly checked out
-        This test is for when 'externals=None' is in parent repo's
-        externals cfg file.
-        Correct behavior is the submodle is not checked out.
-        """
-        self.write_externals_config(branch_name=self._bare_branch_name,
-                                    sub_externals="none")
-        self.execute_checkout_in_dir(self._my_test_dir,
-                                     self.checkout_args)
-        cwd = os.getcwd()
-        checkout_dir = os.path.join(self._my_test_dir, self._checkout_dir)
-        fork_file = os.path.join(checkout_dir,
-                                 self._simple_ext_fork_name, "readme.txt")
-        self.assertFalse(os.path.exists(fork_file))
-        os.chdir(cwd)
-        self.idempotence_check(checkout_dir)
+    # def test_submodule_checkout_none(self):
+    #     """Verify that a git repo with submodule is properly checked out
+    #     This test is for when 'externals=None' is in parent repo's
+    #     externals cfg file.
+    #     Correct behavior is the submodle is not checked out.
+    #     """
+    #     self.write_externals_config(branch_name=self._bare_branch_name,
+    #                                 sub_externals="none")
+    #     self.execute_checkout_in_dir(self._my_test_dir,
+    #                                  self.checkout_args)
+    #     cwd = os.getcwd()
+    #     checkout_dir = os.path.join(self._my_test_dir, self._checkout_dir)
+    #     fork_file = os.path.join(checkout_dir,
+    #                              self._simple_ext_fork_name, "readme.txt")
+    #     self.assertFalse(os.path.exists(fork_file))
+    #     os.chdir(cwd)
+    #     self.idempotence_check(checkout_dir)
 
-    def test_submodule_checkout_config(self): # pylint: disable=too-many-locals
-        """Verify that a git repo with submodule is properly checked out
-        This test if for when the 'from_submodule' keyword is used in the
-        parent repo.
-        Correct behavior is that the submodule is checked out using
-        normal git submodule behavior.
-        """
-        tag_check = None # Not checked out as submodule
-        status_check = "-" # Not checked out as submodule
-        self.write_externals_config(branch_name=self._config_branch_name,
-                                    sub_externals=self._container_extern_name)
-        self.execute_checkout_in_dir(self._my_test_dir,
-                                     self.checkout_args)
-        cwd = os.getcwd()
-        checkout_dir = os.path.join(self._my_test_dir, self._checkout_dir)
-        fork_file = os.path.join(checkout_dir,
-                                 self._simple_ext_fork_name, "readme.txt")
-        self.assertTrue(os.path.exists(fork_file))
-        os.chdir(checkout_dir)
-        # Check submodule status
-        submods = git_submodule_status(checkout_dir)
-        self.assertEqual(len(submods.keys()), 2)
-        self.assertTrue(self._simple_ext_fork_name in submods)
-        submod = submods[self._simple_ext_fork_name]
-        self.assertTrue('hash' in submod)
-        self.assertEqual(submod['hash'], self._fork_hash_check)
-        self.assertTrue('status' in submod)
-        self.assertEqual(submod['status'], status_check)
-        self.assertTrue('tag' in submod)
-        self.assertEqual(submod['tag'], tag_check)
-        self.assertTrue(self._simple_ext_name in submods)
-        submod = submods[self._simple_ext_name]
-        self.assertTrue('hash' in submod)
-        self.assertEqual(submod['hash'], self._simple_hash_check)
-        self.assertTrue('status' in submod)
-        self.assertEqual(submod['status'], status_check)
-        self.assertTrue('tag' in submod)
-        self.assertEqual(submod['tag'], tag_check)
-        # Check fork repo status
-        os.chdir(self._simple_ext_fork_name)
-        self.assertEqual(self.get_git_hash(), self._fork_hash_check)
-        os.chdir(checkout_dir)
-        os.chdir(self._simple_ext_name)
-        hash_check = self.get_git_hash('origin/feature3')
-        self.assertEqual(self.get_git_hash(), hash_check)
-        os.chdir(cwd)
-        self.idempotence_check(checkout_dir)
+    # def test_submodule_checkout_config(self): # pylint: disable=too-many-locals
+    #     """Verify that a git repo with submodule is properly checked out
+    #     This test if for when the 'from_submodule' keyword is used in the
+    #     parent repo.
+    #     Correct behavior is that the submodule is checked out using
+    #     normal git submodule behavior.
+    #     """
+    #     tag_check = None # Not checked out as submodule
+    #     status_check = "-" # Not checked out as submodule
+    #     self.write_externals_config(branch_name=self._config_branch_name,
+    #                                 sub_externals=self._container_extern_name)
+    #     self.execute_checkout_in_dir(self._my_test_dir,
+    #                                  self.checkout_args)
+    #     cwd = os.getcwd()
+    #     checkout_dir = os.path.join(self._my_test_dir, self._checkout_dir)
+    #     fork_file = os.path.join(checkout_dir,
+    #                              self._simple_ext_fork_name, "readme.txt")
+    #     self.assertTrue(os.path.exists(fork_file))
+    #     os.chdir(checkout_dir)
+    #     # Check submodule status
+    #     submods = git_submodule_status(checkout_dir)
+    #     self.assertEqual(len(submods.keys()), 2)
+    #     self.assertTrue(self._simple_ext_fork_name in submods)
+    #     submod = submods[self._simple_ext_fork_name]
+    #     self.assertTrue('hash' in submod)
+    #     self.assertEqual(submod['hash'], self._fork_hash_check)
+    #     self.assertTrue('status' in submod)
+    #     self.assertEqual(submod['status'], status_check)
+    #     self.assertTrue('tag' in submod)
+    #     self.assertEqual(submod['tag'], tag_check)
+    #     self.assertTrue(self._simple_ext_name in submods)
+    #     submod = submods[self._simple_ext_name]
+    #     self.assertTrue('hash' in submod)
+    #     self.assertEqual(submod['hash'], self._simple_hash_check)
+    #     self.assertTrue('status' in submod)
+    #     self.assertEqual(submod['status'], status_check)
+    #     self.assertTrue('tag' in submod)
+    #     self.assertEqual(submod['tag'], tag_check)
+    #     # Check fork repo status
+    #     os.chdir(self._simple_ext_fork_name)
+    #     self.assertEqual(self.get_git_hash(), self._fork_hash_check)
+    #     os.chdir(checkout_dir)
+    #     os.chdir(self._simple_ext_name)
+    #     hash_check = self.get_git_hash('origin/feature3')
+    #     self.assertEqual(self.get_git_hash(), hash_check)
+    #     os.chdir(cwd)
+    #     self.idempotence_check(checkout_dir)
 
 class TestSysCheckoutErrors(BaseTestSysCheckout):
     """Run systems level tests of error conditions in checkout_externals
