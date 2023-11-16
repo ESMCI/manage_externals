@@ -839,12 +839,19 @@ class GitRepository(Repository):
         """Run git submodule update for the side effect of updating this
         repo's submodules.
         """
+        # due to https://vielmetti.typepad.com/logbook/2022/10/git-security-fixes-lead-to-fatal-transport-file-not-allowed-error-in-ci-systems-cve-2022-39253.html
+        # submodules from file doesn't work without overriding the protocol, this is done
+        # for testing submodule support but should not be done in practice
+        file_protocol = ""
+        if "test/tmp/test_submodule" in dirname:
+            file_protocol = "-c protocol.file.allow=always"
+
         # First, verify that we have a .gitmodules file
         if os.path.exists(
                 os.path.join(dirname,
                              ExternalsDescription.GIT_SUBMODULES_FILENAME)):
-            cmd = ('git -C {dirname} submodule update --init --recursive'
-                   .format(dirname=dirname)).split()
+            cmd = ('git {file_protocol} -C {dirname} submodule update --init --recursive'
+                   .format(file_protocol=file_protocol, dirname=dirname)).split()
             if verbosity >= VERBOSITY_VERBOSE:
                 printlog('    {0}'.format(' '.join(cmd)))
 
