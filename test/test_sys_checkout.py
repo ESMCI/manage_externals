@@ -97,6 +97,7 @@ CONTAINER_REPO = 'container.git'     # Parent repo
 SIMPLE_REPO = 'simple-ext.git'       # Child repo
 SIMPLE_FORK_REPO = 'simple-ext-fork.git'  # Child repo
 MIXED_REPO = 'mixed-cont-ext.git'    # Both parent and child
+SVN_TEST_REPO = 'simple-ext.svn'     # Subversion repository
 
 # Standard (arbitrary) external names for test configs
 TAG_SECTION = 'simp_tag'
@@ -119,8 +120,6 @@ README_NAME = 'readme.txt'
 
 # Branch that exists in both the simple and simple-fork repos.
 REMOTE_BRANCH_FEATURE2 = 'feature2'
-
-
 
 # Disable too-many-public-methods error
 # pylint: disable=R0904
@@ -354,7 +353,7 @@ class GenerateExternalsDescriptionCfgV1(object):
 
         self._config.set(name, ExternalsDescription.EXTERNALS, CFG_SUB_NAME)
 
-    def create_svn_external(self, name, tag='', branch=''):
+    def create_svn_external(self, name, url, tag='', branch=''):
         """Create a config section for an svn repository.
 
         """
@@ -365,7 +364,7 @@ class GenerateExternalsDescriptionCfgV1(object):
         self._config.set(name, ExternalsDescription.PROTOCOL,
                          ExternalsDescription.PROTOCOL_SVN)
 
-        self._config.set(name, ExternalsDescription.REPO_URL, SVN_TEST_REPO)
+        self._config.set(name, ExternalsDescription.REPO_URL, url)
 
         self._config.set(name, ExternalsDescription.REQUIRED, str(True))
 
@@ -1386,6 +1385,108 @@ class TestSysCheckout(BaseTestSysCheckout):
         self._check_file_absent(cloned_repo_dir, os.path.join(subrepo_path,
                                                              'simple_subdir',
                                                              'subdir_file.txt'))
+
+class TestSysCheckoutSVN(BaseTestSysCheckout):
+    """Run systems level tests of checkout_externals accessing svn repositories
+
+    SVN tests - these tests use the svn repository interface.
+    """
+
+    @staticmethod
+    def _svn_branch_name():
+        return './{0}/svn_branch'.format(EXTERNALS_PATH)
+
+    @staticmethod
+    def _svn_tag_name():
+        return './{0}/svn_tag'.format(EXTERNALS_PATH)
+    
+    def _svn_test_repo_url(self):
+        return 'file://' + os.path.join(self._bare_root, SVN_TEST_REPO)
+
+    def _check_tag_branch_svn_tag_clean(self, tree):
+        self._check_sync_clean(tree[self._external_path(TAG_SECTION)],
+                               ExternalStatus.STATUS_OK,
+                               ExternalStatus.STATUS_OK)
+        self._check_sync_clean(tree[self._svn_branch_name()],
+                               ExternalStatus.STATUS_OK,
+                               ExternalStatus.STATUS_OK)
+        self._check_sync_clean(tree[self._svn_tag_name()],
+                               ExternalStatus.STATUS_OK,
+                               ExternalStatus.STATUS_OK)
+
+    def _have_svn_access(self):
+        """Check if we have svn access so we can enable tests that use svn.
+
+        """
+        have_svn = False
+        cmd = ['svn', 'ls', self._svn_test_repo_url(), ]
+        try:
+            execute_subprocess(cmd)
+            have_svn = True
+        except BaseException:
+            pass
+        return have_svn
+
+    def _skip_if_no_svn_access(self):
+        """Function decorator to disable svn tests when svn isn't available
+        """
+        have_svn = self._have_svn_access()
+        if not have_svn:
+            raise unittest.SkipTest("No svn access")
+
+    def test_container_simple_svn(self):
+        """Verify that a container repo can pull in an svn branch and svn tag.
+
+        """
+        self._skip_if_no_svn_access()
+        # create repo
+        cloned_repo_dir = self.clone_test_repo(CONTAINER_REPO)
+
+        self._generator.create_config()
+        # Git repo.
+        self._generator.create_section(SIMPLE_REPO, TAG_SECTION, tag='tag1')
+
+        # Svn repos.
+        self._generator.create_svn_external('svn_branch', self._svn_test_repo_url(), branch='trunk')
+        self._generator.create_svn_external('svn_tag', self._svn_test_repo_url(), tag='tags/cesm2.0.beta07')
+
+        self._generator.write_config(cloned_repo_dir)
+
+        # checkout, make sure all sections are clean.
+        tree = self.execute_checkout_with_status(cloned_repo_dir,
+                                                 self.checkout_args)
+        self._check_tag_branch_svn_tag_clean(tree)
+
+        # update description file to make the tag into a branch and
+        # trigger a switch
+        self._generator.write_with_svn_branch(cloned_repo_dir, 'svn_tag',
+                                              'trunk')
+
+        # checkout, again the results should be clean.
+        tree = self.execute_checkout_with_status(cloned_repo_dir,
+                                                 self.checkout_args)
+        self._check_tag_branch_svn_tag_clean(tree)
+
+        # add an untracked file to the repo
+        tracked = False
+        RepoUtils.add_file_to_repo(cloned_repo_dir,
+                                   'externals/svn_branch/tmp.txt', tracked)
+
+        # run a no-op checkout.
+        self.execute_checkout_in_dir(cloned_repo_dir, self.checkout_args)
+
+        # update description file to make the branch into a tag and
+        # trigger a modified sync status
+        self._generator.write_with_svn_branch(cloned_repo_dir, 'svn_tag',
+                                              'tags/cesm2.0.beta07')
+
+        self.execute_checkout_in_dir(cloned_repo_dir,self.checkout_args)
+
+        # verify status is still clean and unmodified, last
+        # checkout modified the working dir state.
+        tree = self.execute_checkout_in_dir(cloned_repo_dir,
+                                            self.verbose_args)
+        self._check_tag_branch_svn_tag_clean(tree)
 
 class TestSubrepoCheckout(BaseTestSysCheckout):
     # Need to store information at setUp time for checking
