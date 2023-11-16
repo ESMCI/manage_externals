@@ -514,7 +514,6 @@ def _execute_checkout_in_dir(dirname, args, debug_env=''):
                       args=' '.join(cmdline)))
     printlog(manual_cmd)
     options = checkout.commandline_arguments(cmdline)
-    print(f"options are {options}")
     overall_status, tree_status = checkout.main(options)
     os.chdir(cwd)
     return overall_status, tree_status
