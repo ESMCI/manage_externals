@@ -6,7 +6,7 @@ on:
     types: closed
 
 jobs:
-  update_date:
+  update_version:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
